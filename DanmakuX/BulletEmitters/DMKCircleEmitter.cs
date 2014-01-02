@@ -25,7 +25,7 @@ public class DMKCircleEmitter: DMKBulletEmitter {
 	public override void DMKShoot(int frame) {
 		float start = _currentAngle;
 		if(trackTarget && targetObject != null) {
-			start = DMKMathUtil.GetDgrBetweenObjects(this.gameObject, targetObject);
+			start = DMKUtil.GetDgrBetweenObjects(this.gameObject, targetObject);
 		}
 		_currentAngle += _acceleration;
 		_acceleration += accel2;

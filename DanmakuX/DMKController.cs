@@ -21,6 +21,7 @@ public class DMKController: MonoBehaviour {
 	public int currentAttackIndex = -1;
 	
 	public int maxBulletCount;
+	[SerializeField]
 	public List<DMKBulletInfo> bulletContainer = new List<DMKBulletInfo>();
 
 	public bool paused = false;
@@ -28,13 +29,11 @@ public class DMKController: MonoBehaviour {
 	// that's for STG!
 	// we want a 60fps update because every value in DMK is related to frame
 	double _prevTime;
-	double _targetInterval;
 	bool   _needInternalTimer;
 	int    _currentFrame;
 
 	public void Awake() {
-		_needInternalTimer = DMKSettings.CheckNeedInternalTimer();
-		_targetInterval = 1.0f / DMKSettings.targetFPS;
+		_needInternalTimer = DMKSettings.instance.CheckNeedInternalTimer();
 
 		if(Application.isEditor)
 			_prevTime = EditorApplication.timeSinceStartup;
@@ -62,14 +61,14 @@ public class DMKController: MonoBehaviour {
 			currentTime = Time.timeSinceLevelLoad;
 		if(_needInternalTimer || Application.isEditor) {
 			double delta = currentTime - _prevTime;
-			if(delta < _targetInterval) {
+			if(delta < DMKSettings.instance.frameInterval) {
 				return;
 			}
 			double realDelta;
-			if(_prevTime < currentTime - _targetInterval &&
-			   _prevTime > currentTime - (_targetInterval * 2)) {
-				realDelta = _targetInterval;
-				_prevTime += _targetInterval;
+			if(_prevTime < currentTime - DMKSettings.instance.frameInterval &&
+			   _prevTime > currentTime - (DMKSettings.instance.frameInterval * 2)) {
+				realDelta = DMKSettings.instance.frameInterval;
+				_prevTime += DMKSettings.instance.frameInterval;
 			} else {
 				realDelta = delta;
 				_prevTime = currentTime;
@@ -86,13 +85,14 @@ public class DMKController: MonoBehaviour {
 	}
 
 	public void StartAttack(int index) {
-		_targetInterval = 1.0f / DMKSettings.targetFPS;
-
 		if(currentAttackIndex != -1) {
-			foreach(DMKBulletEmitter emitter in this.danmakus[currentAttackIndex].emitters) {
-				emitter.enabled = false;
-				emitter.parentController = this;
-			}
+			if(currentAttackIndex < this.danmakus.Count) {
+				foreach(DMKBulletEmitter emitter in this.danmakus[currentAttackIndex].emitters) {
+					emitter.enabled = false;
+					emitter.parentController = this;
+				}
+			} else
+				currentAttackIndex = -1;
 		}
 
 		if(index < danmakus.Count)
@@ -124,37 +124,28 @@ public class DMKController: MonoBehaviour {
 
 	void DMKUpdate() {
 		if(!paused && enabled && currentAttackIndex != -1) {
-			Vector3 pos = Camera.main.transform.position;
-			float   orthoSize = Camera.main.orthographicSize;
-			Rect  	cameraRect = new Rect(pos.x - orthoSize* Camera.main.aspect,
-		                              	  pos.y - orthoSize,
-		                              	  orthoSize * 2 * Camera.main.aspect,
-		                              	  orthoSize * 2);
+			Rect cameraRect = DMKSettings.instance.GetCameraRect();
 		
 			List<DMKBulletInfo> diedBullets = new List<DMKBulletInfo>();
 			foreach(DMKBulletInfo bullet in this.bulletContainer) {
 				DMKBulletInfoInternal info = bullet.bulletInfo;
 				if(!info.died) {
 					Vector3 prevPos = bullet.gameObject.transform.position;
-					float dist = info.speed * DMKSettings.unitPerPixel;
-					if(dist == 0)
-						dist = 1;
+					float dist = info.speed.value * DMKSettings.instance.unitPerPixel;
 					bullet.gameObject.transform.position = new Vector3(prevPos.x + (float)(dist * Mathf.Cos (info.direction)),
 					                                                   prevPos.y + (float)(dist * Mathf.Sin (info.direction)), 
 					                                                   prevPos.z);
 
-					float currentTime = (float)(_currentFrame - info.startFrame) / 60;
-					if(info.useSpeedCurve) 
-						info.speed = info.speedCurve.Evaluate(currentTime);
-					if(info.useAccelCurve)
-						info.accel = info.accelCurve.Evaluate(currentTime);
-					info.speed += info.accel;
-
-					if(info.useAngularAccelCurve)
-						info.angularAccel = info.angularAccelCurve.Evaluate(currentTime) * Mathf.Deg2Rad;
+					int frame = _currentFrame - info.startFrame;
+					float currentTime = (float)(frame) / 60;
+					info.speed.Update(currentTime);
+					info.accel.Update(currentTime);
+					info.speed.value += info.accel.value;
+					info.angularAccel.Update(currentTime);
+					info.angularAccel.value *= Mathf.Deg2Rad;
 					
-					if(info.angularAccel != 0f) {
-						info.direction += info.angularAccel;
+					if(info.angularAccel.value != 0f) {
+						info.direction += info.angularAccel.value;
 						bullet.gameObject.transform.rotation = Quaternion.AngleAxis(info.direction * Mathf.Rad2Deg + 90, Vector3.forward);
 					}
 
@@ -164,7 +155,8 @@ public class DMKController: MonoBehaviour {
 						                                                     1f);
 					}
 
-					if(!cameraRect.Contains(bullet.transform.position)) {
+					if((info.maxLife != 0 && info.maxLife <= frame) ||
+					   !cameraRect.Contains(bullet.transform.position)) {
 						info.died = true;
 						diedBullets.Add(bullet);
 					}

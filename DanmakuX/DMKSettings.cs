@@ -1,16 +1,40 @@
 using UnityEngine;
 using System;
 
-public class DMKSettings {
+[Serializable]
+public class DMKSettings: MonoBehaviour {
 
-	[SerializeField]
-	public static int targetFPS = 60;
-	[SerializeField]
-	public static int pixelPerUnit = 100;
-	[SerializeField]
-	public static float unitPerPixel = 1f / 100;
+	public static string Version = "0.1";
+	public static DMKSettings instance {
+		get {
+			DMKSettings settings = (DMKSettings)GameObject.FindObjectOfType<DMKSettings>();
+			if(!settings) {
+				GameObject settingsObj = new GameObject();
+				settings = settingsObj.AddComponent<DMKSettings>();
+				settingsObj.name = "DanmakuX";
+				UnityEditor.EditorUtility.SetDirty(settingsObj);
+			}
+			return settings;
+		}
+	}
 
-	public static bool CheckNeedInternalTimer() {
+	public int targetFPS = 60;
+	public float frameInterval = 1f / 60;
+	public int pixelPerUnit = 100;
+	public float unitPerPixel = 1f / 100;
+
+	public Camera mainCamera;
+	public bool useCustomOrthoSize = false;
+	public float centerOffsetX = 0;
+	public float centerOffsetY = 0;
+	public float orthoSizeVertical = 8;
+	public float orthoSizeHorizontal = 6;
+
+	public void Awake() {
+
+	}
+
+	public bool CheckNeedInternalTimer() {
 		Application.targetFrameRate = -1;
 		if(targetFPS == Application.targetFrameRate)
 			return false;
@@ -20,5 +44,21 @@ public class DMKSettings {
 			return false;
 		}
 		return true;
+	}
+
+	public Rect GetCameraRect() {
+		Camera camera = mainCamera;
+		if(camera == null)
+			camera = Camera.main;
+		if(!camera.isOrthoGraphic)
+			Debug.LogError("DMKSettings: No valid orthographic caemra found, please assign a orthographic camera in settings");
+
+		Vector3 pos = Camera.main.transform.position;
+		float   orthoV = useCustomOrthoSize ? orthoSizeVertical : Camera.main.orthographicSize;
+		float   orthoH = useCustomOrthoSize ? orthoSizeHorizontal : Camera.main.orthographicSize * Camera.main.aspect;
+		return new Rect(pos.x - orthoH, 
+		                pos.y - orthoV, 
+		                orthoH * 2, 
+		                orthoV * 2);
 	}
 }

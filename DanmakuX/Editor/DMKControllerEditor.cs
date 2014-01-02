@@ -28,30 +28,6 @@ class DMKControllerEditor: Editor {
 		selectedController.Update();
 	}
 
-	[MenuItem("DanmakuX/Danmaku Editor", false, 1)]
-	static void OpenAttackStyleEditor() {
-		DMKDanmakuEditor.Create();
-	}
-
-	[MenuItem("DanmakuX/Settings", false, 13)]
-	static void OpenSettingsEditor() {
-		DMKSettingsEditor.Create();
-	}
-
-	[MenuItem("DanmakuX/Create Controller", false, 2)]
-	static void CreateController() {
-		try {
-			GameObject obj = Selection.activeObject as GameObject;
-			if(obj != null) {
-				obj.AddComponent<DMKController>();
-			}
-			Selection.activeObject = null;
-			Selection.activeObject = obj;
-		} catch {
-			Debug.Log("Please select the object you want to add DMKController to first");
-		}
-	}
-
 	private void PlayerGUI() {
 		GUILayout.BeginVertical("box");
 		GUILayout.Label("Preview (" + selectedController.bulletContainer.Count.ToString() + " Bullets)");

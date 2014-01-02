@@ -13,15 +13,46 @@ public class DMKBulletEmitter: ScriptableObject {
 	public GameObject	bulletContainer;
 
 	public string 		tag;
-	public int 			cooldown = 30;
 
-	public int 			length = 0;
-	public int 			interval = 0;
+	int _cooldown = 30;
+	int _length = 0;
+	int _interval = 0;
+
+	public int cooldown {
+		get { return _cooldown; }
+		set {
+			if(value != _cooldown)
+				DMKInit();
+			_cooldown = value;
+		}
+	}
+
+	public int length {
+		get { return _length; }
+		set {
+			if(value != _length)
+				DMKInit();
+			_length = value;
+		}
+	}
+
+	public int interval {
+		get { return _interval; }
+		set {
+			if(value != _interval)
+				DMKInit();
+			_interval = value;
+		}
+	}
 
 	public GameObject	gameObject;
-
-	public Vector3  	positionOffset;
-
+	
+	public bool				usePositionOffCurve;
+	public Vector2	 		positionOffset;
+	public AnimationCurve 	positionOffsetX;
+	public AnimationCurve 	positionOffsetY;
+	
+	public List<DMKBulletInfo> bullets;
 
 	bool  _enabled;
 	public bool	enabled { 
@@ -38,8 +69,6 @@ public class DMKBulletEmitter: ScriptableObject {
 	int _prevFrame = 0;
 	int _currentFrame = 0;
 
-	public List<DMKBulletInfo> bullets;
-		
 	public void Start() {
 		_currentCooldown = 0;
 		_currentInterval = 0;
@@ -71,6 +100,8 @@ public class DMKBulletEmitter: ScriptableObject {
 			} else {
 				_prevFrame = currentFrame;
 				_currentInterval = interval;
+				if(interval == 0)
+					enabled = false;
 			}
 		}
 	}
@@ -87,37 +118,26 @@ public class DMKBulletEmitter: ScriptableObject {
 		return "DMK Emitter";
 	}
 
-	void CopyInfo(DMKBulletInfo infoComponent, DMKBulletInfoInternal prototype, float dir) {
-		infoComponent.bulletInfo.speed = prototype.speed;
-		infoComponent.bulletInfo.accel = prototype.accel;
-		infoComponent.bulletInfo.angularAccel = prototype.angularAccel * Mathf.Deg2Rad;
-		infoComponent.bulletInfo.bulletSprite = prototype.bulletSprite;
-		infoComponent.bulletInfo.damage = prototype.damage;
-		infoComponent.bulletInfo.direction = dir * Mathf.Deg2Rad;
-		infoComponent.bulletInfo.speed = prototype.speed;
-		infoComponent.bulletInfo.accel = prototype.accel;
-		infoComponent.bulletInfo.bulletColor = prototype.bulletColor;
-		infoComponent.bulletInfo.died = false;
+	public virtual void CopyFrom(DMKBulletEmitter emitter) {
+		this.interval 			= emitter.interval;
+		this.cooldown 			= emitter.cooldown;
+		this.length   			= emitter.length;
+		this.positionOffset 	= emitter.positionOffset;
+		this.bulletContainer 	= emitter.bulletContainer;
+		this.gameObject 		= emitter.gameObject;
+		this.tag 				= emitter.tag;
 
-		infoComponent.bulletInfo.useAccelCurve = prototype.useAccelCurve;
-		infoComponent.bulletInfo.useScaleCurve = prototype.useScaleCurve;
-		infoComponent.bulletInfo.useSpeedCurve = prototype.useSpeedCurve;
-		infoComponent.bulletInfo.speedCurve	   = prototype.speedCurve;
-		infoComponent.bulletInfo.accelCurve	   = prototype.accelCurve;
-		infoComponent.bulletInfo.scaleCurveX    = prototype.scaleCurveX;
-		infoComponent.bulletInfo.scaleCurveY    = prototype.scaleCurveY;
-		infoComponent.bulletInfo.useAngularAccelCurve = prototype.useAngularAccelCurve;
-		infoComponent.bulletInfo.angularAccelCurve = prototype.angularAccelCurve;
-
-		infoComponent.bulletInfo.startFrame = _currentFrame;
+		this.bulletInfo.CopyFrom(emitter.bulletInfo);
 	}
 
 	DMKBulletInfo _CreateBullet(Vector3 position, float direction) {
 		if(parentController.CanAddBullet()) {
 			GameObject bulletObj = new GameObject();
 			DMKBulletInfo bullet = bulletObj.AddComponent<DMKBulletInfo>();
-			CopyInfo(bullet, this.bulletInfo, direction);
-			
+			bullet.bulletInfo.CopyFrom(this.bulletInfo);
+			bullet.bulletInfo.direction = direction * Mathf.Deg2Rad;
+			bullet.bulletInfo.startFrame = _currentFrame;
+
 			SpriteRenderer renderer = bulletObj.AddComponent<SpriteRenderer>();
 			renderer.sprite = this.bulletInfo.bulletSprite;
 			renderer.color = this.bulletInfo.bulletColor;
@@ -125,11 +145,20 @@ public class DMKBulletEmitter: ScriptableObject {
 			
 			//bulletObj.AddComponent<BoxCollider2D>().isTrigger = true;
 
-			bullet.transform.parent = bulletContainer.transform;
+			if(bulletContainer != null)
+				bullet.transform.parent = bulletContainer.transform;
 			
 			bullet.transform.localScale = new Vector3(this.bulletInfo.scale.x, this.bulletInfo.scale.y, 1);
 			bullet.transform.rotation = Quaternion.AngleAxis(direction + 90, Vector3.forward);
-			bullet.transform.position = position + this.positionOffset;
+			if(!this.usePositionOffCurve) {
+				position.x += this.positionOffset.x;
+				position.y += this.positionOffset.y;
+			} else {
+				float ctime = _currentFrame * DMKSettings.instance.frameInterval;
+				position.x += this.positionOffsetX.Evaluate(ctime);
+				position.y += this.positionOffsetY.Evaluate(ctime);
+			}
+			bullet.transform.position = position;
 			
 			bullet.tag = this.tag;
 
