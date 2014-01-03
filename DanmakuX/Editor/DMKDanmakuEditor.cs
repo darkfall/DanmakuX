@@ -8,6 +8,7 @@ class DMKDanmakuEditor: EditorWindow {
 
 	public static int PreviewTextureWidth = 48;
 	public static int PreviewTextureHeight = 48;
+	public static int LeftPaneWidth = 154;
 
 	public int 			  asSelectedIndex = 0;
 	public DMKDanmaku	  asSelectedStyle;
@@ -15,8 +16,7 @@ class DMKDanmakuEditor: EditorWindow {
 	public DMKController selectedController;
 	// used to display names
 	public List<string> danmakuNames;
-	
-	public List<string> bulletEmitterNames;
+
 	public int 		 	emitterIdx;
 	Vector2			 	emitterScrollPosition;
 
@@ -52,16 +52,6 @@ class DMKDanmakuEditor: EditorWindow {
 			} else
 				selectedController = null;
 
-			bulletEmitterNames = new List<string>();
-			
-			foreach(System.Reflection.Assembly asm in AppDomain.CurrentDomain.GetAssemblies()) {
-				foreach(Type type in asm.GetTypes()) {
-					if(type.BaseType == typeof(DMKBulletEmitter)) {
-						bulletEmitterNames.Add(type.ToString());
-					}
-				}
-			}
-			
 			asSelectedIndex = -1;
 			asSelectedStyle = null;
 			if(selectedController != null && selectedController.danmakus.Count > 0) {
@@ -79,9 +69,11 @@ class DMKDanmakuEditor: EditorWindow {
 	}
 
 	void LeftPanelGUI() {
-		GUILayout.BeginArea(new Rect(0, 0, 160, this.position.height),
+		DMKGUIUtility.Init();
+
+		GUILayout.BeginArea(new Rect(0, 0, LeftPaneWidth, this.position.height),
 		                    "",
-		                    "box");
+		                    DMKGUIUtility.boxNoBackground);
 		GUILayout.BeginVertical(GUILayout.Width(150));
 
 		{
@@ -130,35 +122,17 @@ class DMKDanmakuEditor: EditorWindow {
 		GUILayout.Space (2);
 
 		{
-			asSelectedIndex = DMKGUIUtility.MakeSimpleList(asSelectedIndex, danmakuNames.ToArray());
-			//asSelectedIndex = GUILayout.SelectionGrid(asSelectedIndex, danmakuNames.ToArray(), 1);
-			if(asSelectedIndex >= 0 && selectedController != null && selectedController.danmakus.Count > 0) {
-				asSelectedStyle = selectedController.danmakus[asSelectedIndex];
+			if(danmakuNames.Count > 0) {
+				asSelectedIndex = DMKGUIUtility.MakeSimpleList(asSelectedIndex, danmakuNames.ToArray());
+				//asSelectedIndex = GUILayout.SelectionGrid(asSelectedIndex, danmakuNames.ToArray(), 1);
+				if(asSelectedIndex >= 0 && selectedController != null && selectedController.danmakus.Count > 0) {
+					asSelectedStyle = selectedController.danmakus[asSelectedIndex];
+				}
 			}
 		}
 
 		GUILayout.EndVertical();
 		GUILayout.EndArea();
-	}
-	
-	void MakeCurveToggle(ref bool flag) {
-		GUILayout.Label("Curve", GUILayout.Width(40));
-		flag = EditorGUILayout.Toggle("", flag, GUILayout.Width(16));
-	}
-
-	void MakeCurveControl(ref DMKCurveProperty curve, string label) {
-		EditorGUILayout.BeginHorizontal();
-		if(curve.useCurve) {
-			curve.curve = EditorGUILayout.CurveField(label, curve.curve);
-		} else {
-			curve.value = EditorGUILayout.FloatField(label, curve.value);
-		}
-		MakeCurveToggle(ref curve.useCurve);
-		EditorGUILayout.EndHorizontal();
-	}
-
-	void CreateOptionalCurveField(ref bool useCurve, ref float fVal, ref AnimationCurve cVal, string label) {
-
 	}
 
 #region emitter tools menu
@@ -181,6 +155,10 @@ class DMKDanmakuEditor: EditorWindow {
 		if(EditorUtility.DisplayDialog("Remove Emitter", "Are you sure you want to remove this emitter?", "Yes", "No")) {
 			if(_selectedEmitter != null)
 				asSelectedStyle.emitters.Remove(_selectedEmitter);
+//			if(_selectedEmitter.deathParentEmitter != null) {
+//				_selectedEmitter.deathParentEmitter.deathSubEmitter = null;
+//				_selectedEmitter.deathParentEmitter.editorDeathSubEmitterIndex = -1;
+//			}
 			_selectedEmitter = null;
 		}
 	}
@@ -201,24 +179,85 @@ class DMKDanmakuEditor: EditorWindow {
 
 #endregion
 
+#region new emitter menu
+
+	void OnAddEmitterClicked(object userData) {
+		string emitterTypeName = userData as string;
+
+		DMKBulletEmitter emitter = ScriptableObject.CreateInstance(emitterTypeName) as DMKBulletEmitter;
+		emitter.editorExpanded = true;
+		emitter.parentController = selectedController;
+		emitter.gameObject = selectedController.transform.gameObject;
+		emitter.identifier = emitterTypeName;
+		
+		if(asSelectedStyle.emitters.Count > 0) {
+			emitter.bulletContainer = asSelectedStyle.emitters[0].bulletContainer;
+			emitter.tag = asSelectedStyle.emitters[0].tag;
+		}
+		asSelectedStyle.emitters.Add( emitter );
+		
+		if(selectedController.currentAttackIndex != -1) {
+			// playing
+			emitter.enabled = true;
+		}
+		EditorUtility.SetDirty(this.selectedController.gameObject);
+	}
+	
+	void DisplayNewEmitterMenu() {
+		GenericMenu menu = new GenericMenu();
+		
+		foreach(System.Reflection.Assembly asm in AppDomain.CurrentDomain.GetAssemblies()) {
+			foreach(Type type in asm.GetTypes()) {
+				if(type.BaseType == typeof(DMKBulletEmitter)) {
+					menu.AddItem(new GUIContent(type.ToString()), false, OnAddEmitterClicked, type.ToString());
+				}
+			}
+		}
+		
+		menu.ShowAsContext();
+	}
+
+
+#endregion
+
+	string[] BuildSubEmitterList(DMKBulletEmitter currentEmitter) {
+		List<string> emitters = new List<string>(asSelectedStyle.emitters.Count);
+		emitters.Add("None");
+		foreach(DMKBulletEmitter emitter in asSelectedStyle.emitters) {
+			if(emitter != currentEmitter)
+				emitters.Add (emitter.identifier);
+		}
+		return emitters.ToArray();
+	}
+
 	void RightPanelGUI() {
-		GUILayout.BeginArea(new Rect(160, 0, this.position.width - 160, this.position.height),
-		                    "",
-		                    "box");
+		GUILayout.BeginArea(new Rect(LeftPaneWidth, 0, this.position.width - LeftPaneWidth, this.position.height),
+		                    "");
+
+		if(selectedController.danmakus.Count == 0) {
+			EditorGUILayout.HelpBox("No Danmakus Available", MessageType.Info);
+			GUILayout.EndArea();
+			return;
+		}
 
 		if(asSelectedStyle != null && asSelectedIndex >= 0 && asSelectedIndex < selectedController.danmakus.Count) {
 			emitterScrollPosition = GUILayout.BeginScrollView(emitterScrollPosition);
-
 			GUILayout.BeginVertical("box");
 			asSelectedStyle.name = EditorGUILayout.TextField("Name", asSelectedStyle.name);
 			danmakuNames[asSelectedIndex] = asSelectedStyle.name;
 
 			selectedController.maxBulletCount = EditorGUILayout.IntField("Max Num Bullets", selectedController.maxBulletCount);
 			GUILayout.EndVertical();
-
 			GUILayout.BeginVertical("box");
-			GUILayout.Label(asSelectedStyle.emitters.Count.ToString() + " Emitters");
+			GUILayout.BeginHorizontal();
+			{
 
+				GUILayout.Label(asSelectedStyle.emitters.Count.ToString() + " Emitters");
+				if(GUILayout.Button("+", "label", GUILayout.Width(16))) {
+					this.DisplayNewEmitterMenu();
+				}
+			}
+			GUILayout.EndHorizontal();
 			foreach(DMKBulletEmitter emitter in asSelectedStyle.emitters) {
 				GUILayout.BeginVertical("box");
 				{
@@ -227,7 +266,10 @@ class DMKDanmakuEditor: EditorWindow {
 					emitter.enabled = emitter.editorEnabled;
 
 					emitter.editorExpanded = EditorGUILayout.Foldout(emitter.editorExpanded, emitter.DMKName());
-
+					/*if(!emitter.editorExpanded) {
+						GUILayout.Label("Identifier", GUILayout.Width(54));
+						emitter.identifier = EditorGUILayout.TextField(emitter.identifier, GUILayout.MaxWidth(120));
+					}*/
 					if(GUILayout.Button("Options", "label", GUILayout.Width(48))) {
 						_selectedEmitter = emitter;
 						this.DisplayEmitterToolsMenu();
@@ -239,6 +281,7 @@ class DMKDanmakuEditor: EditorWindow {
 				if(emitter.editorExpanded) {
 					EditorGUILayout.BeginVertical();
 					{
+						//emitter.identifier = EditorGUILayout.TextField("Identifier", emitter.identifier);
 						emitter.bulletContainer = (GameObject)EditorGUILayout.ObjectField("Bullet Container", emitter.bulletContainer, typeof(GameObject), true);
 						emitter.cooldown 	= EditorGUILayout.IntField("Cooldown", emitter.cooldown);
 						if(emitter.cooldown < 0)
@@ -256,7 +299,7 @@ class DMKDanmakuEditor: EditorWindow {
 						GUILayout.BeginHorizontal();
 						{
 							GUILayout.Label("Position Offset");
-							MakeCurveToggle(ref emitter.usePositionOffCurve);
+							emitter.usePositionOffCurve = DMKGUIUtility.MakeCurveToggle(emitter.usePositionOffCurve);
 						}
 						GUILayout.EndHorizontal();
 						
@@ -274,6 +317,19 @@ class DMKDanmakuEditor: EditorWindow {
 							GUILayout.EndVertical();
 						}
 						GUILayout.EndHorizontal();
+
+						/*
+						emitter.editorDeathSubEmitterIndex = EditorGUILayout.Popup("Death SubEmitter", emitter.editorDeathSubEmitterIndex, BuildSubEmitterList(emitter));
+						if(emitter.editorDeathSubEmitterIndex > 0) {
+							if(emitter.deathSubEmitter != null)
+								emitter.deathSubEmitter.deathParentEmitter = null;
+							emitter.deathSubEmitter = asSelectedStyle.emitters[emitter.editorDeathSubEmitterIndex];
+							emitter.deathSubEmitter.deathParentEmitter = emitter;
+						} else
+							emitter.editorDeathSubEmitterIndex = -1;
+						if(emitter.deathParentEmitter != null)
+							EditorGUILayout.LabelField("Parent Emitter", emitter.deathParentEmitter.identifier);
+						*/
 					}
 					EditorGUILayout.Separator();
 					EditorGUILayout.EndVertical();
@@ -282,8 +338,15 @@ class DMKDanmakuEditor: EditorWindow {
 					{
 						EditorGUILayout.BeginHorizontal();
 						EditorGUILayout.BeginVertical();
-						
-						emitter.editorBulletInfoExpanded = EditorGUILayout.Foldout(emitter.editorBulletInfoExpanded, "Bullet Info");
+
+						string bulletInfoStr = "Bullet Info";
+						if(!emitter.editorBulletInfoExpanded) {
+							bulletInfoStr = String.Format("Bullet Info (Speed = {0}, Accel = {1}, Lifetime = {2})", 
+							                              emitter.bulletInfo.speed.value,
+							                              emitter.bulletInfo.accel.value,
+							                              emitter.bulletInfo.maxLifetime);
+						}
+						emitter.editorBulletInfoExpanded = EditorGUILayout.Foldout(emitter.editorBulletInfoExpanded, bulletInfoStr);
 
 						if(emitter.editorBulletInfoExpanded) {
 							EditorGUILayout.BeginHorizontal();
@@ -334,14 +397,14 @@ class DMKDanmakuEditor: EditorWindow {
 							EditorGUILayout.Separator();
 							
 							DMKBulletInfoInternal bulletInfo = emitter.bulletInfo;
-							MakeCurveControl(ref bulletInfo.speed, "Speed");
-							MakeCurveControl(ref bulletInfo.accel, "Acceleration");
-							MakeCurveControl(ref bulletInfo.angularAccel, "Angular Accel");
+							DMKGUIUtility.MakeCurveControl(ref bulletInfo.speed, "Speed");
+							DMKGUIUtility.MakeCurveControl(ref bulletInfo.accel, "Acceleration");
+							DMKGUIUtility.MakeCurveControl(ref bulletInfo.angularAccel, "Angular Accel");
 							
 							GUILayout.BeginHorizontal();
 							{
 								GUILayout.Label("Scale");
-								MakeCurveToggle(ref bulletInfo.useScaleCurve);
+								bulletInfo.useScaleCurve = DMKGUIUtility.MakeCurveToggle(bulletInfo.useScaleCurve);
 							}
 							GUILayout.EndHorizontal();
 							
@@ -361,7 +424,7 @@ class DMKDanmakuEditor: EditorWindow {
 							GUILayout.EndHorizontal();
 								
 							emitter.bulletInfo.damage = EditorGUILayout.IntField("Damage", emitter.bulletInfo.damage);
-							emitter.bulletInfo.maxLife = EditorGUILayout.IntField("Max Life Frame", emitter.bulletInfo.maxLife);
+							emitter.bulletInfo.maxLifetime = EditorGUILayout.IntField("Lifetime (Frame)", emitter.bulletInfo.maxLifetime);
 						}
 						EditorGUILayout.EndVertical();
 						EditorGUILayout.EndHorizontal();
@@ -369,7 +432,10 @@ class DMKDanmakuEditor: EditorWindow {
 					EditorGUILayout.EndVertical();
 					
 					EditorGUILayout.BeginVertical("box");
-					emitter.editorEmitterInfoExpanded = EditorGUILayout.Foldout(emitter.editorEmitterInfoExpanded, "Emitter");
+					string emitterStr = "Emitter ";
+					if(!emitter.editorEmitterInfoExpanded)
+						emitterStr += emitter.DMKSummary();
+					emitter.editorEmitterInfoExpanded = EditorGUILayout.Foldout(emitter.editorEmitterInfoExpanded, emitterStr);
 					if(emitter.editorEmitterInfoExpanded) {
 						emitter.OnEditorGUI();
 					}
@@ -378,30 +444,6 @@ class DMKDanmakuEditor: EditorWindow {
 				GUILayout.EndVertical();
 			}
 
-			GUILayout.BeginHorizontal("box");
-			GUILayout.Label("New Emitter", GUILayout.Width(80));
-			emitterIdx = EditorGUILayout.Popup("", emitterIdx, bulletEmitterNames.ToArray());
-			
-			if(GUILayout.Button("+", "label", GUILayout.Width(12))) {
-				DMKBulletEmitter emitter = ScriptableObject.CreateInstance(bulletEmitterNames[emitterIdx]) as DMKBulletEmitter;
-				emitter.editorExpanded = true;
-				emitter.parentController = selectedController;
-				emitter.gameObject = selectedController.transform.gameObject;
-				if(asSelectedStyle.emitters.Count > 0) {
-					emitter.bulletContainer = asSelectedStyle.emitters[0].bulletContainer;
-					emitter.tag = asSelectedStyle.emitters[0].tag;
-				}
-				asSelectedStyle.emitters.Add( emitter );
-
-				if(selectedController.currentAttackIndex != -1) {
-					// playing
-					emitter.enabled = true;
-				}
-
-				EditorUtility.SetDirty(this.selectedController.gameObject);
-			}
-
-			GUILayout.EndHorizontal();
 			GUILayout.EndVertical();
 			
 			GUILayout.EndScrollView();

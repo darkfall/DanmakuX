@@ -11,8 +11,8 @@ public class DMKBulletEmitter: ScriptableObject {
 	public DMKBulletInfoInternal bulletInfo = new DMKBulletInfoInternal();
 
 	public GameObject	bulletContainer;
-
 	public string 		tag;
+	public string 		identifier;
 
 	int _cooldown = 30;
 	int _length = 0;
@@ -51,7 +51,7 @@ public class DMKBulletEmitter: ScriptableObject {
 	public Vector2	 		positionOffset;
 	public AnimationCurve 	positionOffsetX;
 	public AnimationCurve 	positionOffsetY;
-	
+
 	public List<DMKBulletInfo> bullets;
 
 	bool  _enabled;
@@ -77,6 +77,11 @@ public class DMKBulletEmitter: ScriptableObject {
 
 	public void Update() {
 
+	}
+
+	public override string ToString ()
+	{
+		return this.identifier;
 	}
 
 	public virtual void DMKUpdateFrame(int currentFrame) {
@@ -118,6 +123,10 @@ public class DMKBulletEmitter: ScriptableObject {
 		return "DMK Emitter";
 	}
 
+	public virtual string DMKSummary() {
+		return "";
+	}
+
 	public virtual void CopyFrom(DMKBulletEmitter emitter) {
 		this.interval 			= emitter.interval;
 		this.cooldown 			= emitter.cooldown;
@@ -134,6 +143,8 @@ public class DMKBulletEmitter: ScriptableObject {
 		if(parentController.CanAddBullet()) {
 			GameObject bulletObj = new GameObject();
 			DMKBulletInfo bullet = bulletObj.AddComponent<DMKBulletInfo>();
+
+			//bullet.deathSubEmitter = this.deathSubEmitter;
 			bullet.bulletInfo.CopyFrom(this.bulletInfo);
 			bullet.bulletInfo.direction = direction * Mathf.Deg2Rad;
 			bullet.bulletInfo.startFrame = _currentFrame;
@@ -185,6 +196,7 @@ public class DMKBulletEmitter: ScriptableObject {
 	public bool editorEnabled = true;
 	public bool editorBulletInfoExpanded = true;
 	public bool editorEmitterInfoExpanded = true;
+	public int  editorDeathSubEmitterIndex = -1;
 	
 	public virtual void OnEditorGUI() {
 	}

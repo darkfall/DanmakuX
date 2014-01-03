@@ -8,6 +8,7 @@ using System.Collections.Generic;
 class DMKControllerEditor: Editor {
 
 	DMKController selectedController = null;
+	int selectedPreviewIndex = 0;
 
 	public void OnEnable() {
 		EditorApplication.update += OnUpdateCallback;
@@ -29,7 +30,7 @@ class DMKControllerEditor: Editor {
 	}
 
 	private void PlayerGUI() {
-		GUILayout.BeginVertical("box");
+		GUILayout.BeginVertical();
 		GUILayout.Label("Preview (" + selectedController.bulletContainer.Count.ToString() + " Bullets)");
 
 		/*
@@ -38,19 +39,36 @@ class DMKControllerEditor: Editor {
 		GUILayout.EndVertical();
 		*/
 
-		GUILayout.BeginHorizontal();
-		if(selectedController.currentAttackIndex != -1) {
-			if(GUILayout.Button("Stop")) {
-				selectedController.StartAttack(-1);
-			}
+		if(selectedController.danmakus.Count == 0) {
+			EditorGUILayout.HelpBox("No Danmakus Available", MessageType.Info);
 		} else {
-			if(GUILayout.Button("Play")) {
-				selectedController.StartAttack(0);
+			selectedPreviewIndex = DMKGUIUtility.MakeSimpleList(selectedPreviewIndex, selectedController.danmakus);
+			if(selectedPreviewIndex >= selectedController.danmakus.Count)
+				selectedPreviewIndex = -1;
+			
+			GUILayout.BeginHorizontal();
+			{
+				if(selectedPreviewIndex != -1) {
+					if(selectedController.currentAttackIndex != -1) {
+						if(GUILayout.Button("Stop")) {
+							selectedController.StartAttack(-1);
+						}
+					} else {
+						if(GUILayout.Button("Play")) {
+							selectedController.StartAttack(0);
+						}
+					}
+					selectedController.paused = (GUILayout.Toggle(selectedController.paused, "Pause", "button"));
+				} else {
+					GUI.enabled = false;
+					GUILayout.Button("Play");
+					GUILayout.Toggle(false, "Pause", "button");
+					GUI.enabled = false;
+				}
 			}
+			GUILayout.EndHorizontal();
 		}
-		selectedController.paused = (GUILayout.Toggle(selectedController.paused, "Pause", "button"));
 
-		GUILayout.EndHorizontal();
 		GUILayout.EndVertical();
 	}
 	

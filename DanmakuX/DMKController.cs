@@ -6,11 +6,21 @@ using System.Collections.Generic;
 
 [Serializable]
 public class DMKDanmaku {
-	[SerializeField]
 	public string name;
 
 	[SerializeField]
 	public List<DMKBulletEmitter> emitters;
+
+	public override string ToString() {
+		return name;
+	}
+
+#region editor
+
+	public bool editorExpanded = true;
+
+#endregion
+
 };
 
 [Serializable]
@@ -112,10 +122,13 @@ public class DMKController: MonoBehaviour {
 			this.bulletContainer.Clear();
 		} else {
 			foreach(DMKBulletEmitter emitter in this.danmakus[currentAttackIndex].emitters) {
-				if(Application.isEditor)
-					emitter.enabled = true && emitter.editorEnabled;
-				else
-					emitter.enabled = true;
+//				if(emitter.deathParentEmitter == null) {
+					if(Application.isEditor)
+						emitter.enabled = true && emitter.editorEnabled;
+					else
+						emitter.enabled = true;
+		//		}
+				// otherwise will be initiated by parent emitter
 			}
 		}
 		_currentFrame = 0;
@@ -155,10 +168,11 @@ public class DMKController: MonoBehaviour {
 						                                                     1f);
 					}
 
-					if((info.maxLife != 0 && info.maxLife <= frame) ||
+					if((info.maxLifetime != 0 && info.maxLifetime <= frame) ||
 					   !cameraRect.Contains(bullet.transform.position)) {
 						info.died = true;
 						diedBullets.Add(bullet);
+
 					}
 				} else {
 					diedBullets.Add(bullet);

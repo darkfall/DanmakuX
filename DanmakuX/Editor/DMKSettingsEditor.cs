@@ -8,25 +8,21 @@ public class DMKSettingsEditor: EditorWindow {
 		DMKSettingsEditor editor = (DMKSettingsEditor)EditorWindow.GetWindow<DMKSettingsEditor>("DanmakuX Settings", true);
 	}
 
-	public void OnGUI() {
+	public static void SettingsGUI() {
 		GUILayout.BeginVertical();
+		GUI.skin.label.wordWrap = false;
 
-		GUILayout.BeginHorizontal("box");
-		GUILayout.Label("DanmukuX Ver " + DMKSettings.Version + " by Robert Bu (darkfall3@gmail.com)", GUILayout.MaxWidth(this.position.width - 10));
-		GUILayout.EndHorizontal();
-	
+		EditorGUILayout.HelpBox("DanmukuX Ver " + DMKSettings.Version + " by Robert Bu (darkfall3@gmail.com)", MessageType.None);
+
 		EditorGUILayout.Space();
-
+		
 		DMKSettings.instance.targetFPS = EditorGUILayout.IntField("Target FPS", DMKSettings.instance.targetFPS);
 		DMKSettings.instance.pixelPerUnit = EditorGUILayout.IntField("Pixel To Units", DMKSettings.instance.pixelPerUnit);
 		DMKSettings.instance.unitPerPixel = 1f / DMKSettings.instance.pixelPerUnit;
 		DMKSettings.instance.frameInterval = 1f / DMKSettings.instance.targetFPS;
 
-		GUILayout.BeginHorizontal("box");
-		GUI.skin.label.wordWrap = true;
-		GUILayout.Label("Orthographic Size and Offset are measured in units, see Pixel To Units to convert to pixels", GUILayout.MaxWidth(this.position.width - 10));
-		GUILayout.EndHorizontal();
-
+		EditorGUILayout.HelpBox("Orthographic Size and Offset are measured in units, see Pixel To Units to convert to pixels", MessageType.None);
+	
 		DMKSettings.instance.mainCamera = (Camera)EditorGUILayout.ObjectField("Camera", DMKSettings.instance.mainCamera, typeof(Camera), true);
 		if(DMKSettings.instance.mainCamera &&
 		   !DMKSettings.instance.mainCamera.isOrthoGraphic) {
@@ -46,8 +42,13 @@ public class DMKSettingsEditor: EditorWindow {
 			DMKSettings.instance.orthoSizeHorizontal = EditorGUILayout.FloatField("Horizontal Ortho Size", DMKSettings.instance.orthoSizeHorizontal);
 			DMKSettings.instance.orthoSizeVertical = EditorGUILayout.FloatField("Vertical Ortho Size", DMKSettings.instance.orthoSizeVertical);
 		}
-
+		
+		GUI.skin.label.wordWrap = true;
 		GUILayout.EndVertical();
+	}
+
+	public void OnGUI() {
+		SettingsGUI();
 	}
 
 }

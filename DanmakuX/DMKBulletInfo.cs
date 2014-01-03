@@ -41,8 +41,9 @@ public class DMKBulletInfoInternal {
 
 	public Vector2 scale =  new Vector2(1, 1);
 
-	public int maxLife = 0;
+	public int maxLifetime = 0;
 	public int startFrame;
+	public Rect collisionRect = new Rect();
 
 	public bool			  useScaleCurve = false;
 	public AnimationCurve scaleCurveX;
@@ -73,6 +74,9 @@ public class DMKBulletInfoInternal {
 		this.useScaleCurve = prototype.useScaleCurve;
 		this.scaleCurveX    = prototype.scaleCurveX;
 		this.scaleCurveY    = prototype.scaleCurveY;
+
+		this.collisionRect = prototype.collisionRect;
+		this.maxLifetime = prototype.maxLifetime;
 	}
 };
 

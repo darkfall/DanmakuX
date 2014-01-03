@@ -18,4 +18,11 @@ class DMKUtil {
 		return curve;
 	}
 
+	public static string[] ToStringArray(System.Collections.IList entries) {
+		System.Collections.Generic.List<string> strs = new System.Collections.Generic.List<string>();
+		foreach(object obj in entries)
+			strs.Add(obj.ToString());
+		return strs.ToArray();
+	}
+
 }

@@ -49,6 +49,16 @@ public class DMKCircleEmitter: DMKBulletEmitter {
 		return "Circle Emitter";
 	}
 
+	public override string DMKSummary() {
+		return String.Format("(Count = {0}, Radius = {1})", this.bulletCount, this.radius);
+	}
+
+	public override void CopyFrom (DMKBulletEmitter emitter)
+	{
+		base.CopyFrom (emitter);
+	
+	}
+
 	#region editor
 
 	public override void OnEditorGUI() {

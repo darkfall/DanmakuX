@@ -9,19 +9,24 @@ public class DMKGUIUtility {
 	public static GUIStyle boxStyle;
 	public static GUIStyle listEntryNormal;
 	public static GUIStyle listEntryFocused;
+	public static GUIStyle boxNoBackground;
 
 	public static bool Initialized = false;
 
-	static void Init() {
-		boxStyle = new GUIStyle(GUI.skin.box);
-
-		listEntryNormal = new GUIStyle(GUI.skin.label);
-		listEntryNormal.alignment = TextAnchor.MiddleCenter;
-
-		listEntryFocused = new GUIStyle(GUI.skin.label);
-		listEntryFocused.alignment = TextAnchor.MiddleCenter;
-		SetStyleTextColor(listEntryFocused, new Color(0, 1, 0, 1));
-
+	public static void Init() {
+		if(!Initialized) {
+			boxStyle = new GUIStyle(GUI.skin.box);
+			
+			listEntryNormal = new GUIStyle(GUI.skin.label);
+			listEntryNormal.alignment = TextAnchor.MiddleCenter;
+			
+			listEntryFocused = new GUIStyle(GUI.skin.label);
+			listEntryFocused.alignment = TextAnchor.MiddleCenter;
+			SetStyleTextColor(listEntryFocused, new Color(0, 1, 0, 1));
+			
+			boxNoBackground = new GUIStyle(GUI.skin.box);
+			boxNoBackground.normal.background = boxNoBackground.focused.background = boxNoBackground.active.background = null;
+		}
 		Initialized = true;
 	}
 
@@ -41,12 +46,14 @@ public class DMKGUIUtility {
 		if(!Initialized) {
 			DMKGUIUtility.Init();
 		}
+		if(entries.Count == 0)
+			return selectedIndex;
+
 		EditorGUILayout.BeginVertical(boxStyle);
 		int newSelectedIndex = -1;
 		{
 			for(int index=0; index<entries.Count; ++index) {
-
-				if(GUILayout.Button((string)entries[index],
+				if(GUILayout.Button(entries[index].ToString(),
 				                    selectedIndex == index ? DMKGUIUtility.listEntryFocused : DMKGUIUtility.listEntryNormal)) {
 					newSelectedIndex = index;
 				}
@@ -57,6 +64,23 @@ public class DMKGUIUtility {
 		EditorGUILayout.EndVertical();
 
 		return newSelectedIndex == -1 ? selectedIndex : newSelectedIndex;
+	}
+
+	
+	public static bool MakeCurveToggle(bool flag) {
+		GUILayout.Label("Curve", GUILayout.Width(40));
+		return EditorGUILayout.Toggle("", flag, GUILayout.Width(16));
+	}
+	
+	public static void MakeCurveControl(ref DMKCurveProperty curve, string label) {
+		EditorGUILayout.BeginHorizontal();
+		if(curve.useCurve) {
+			curve.curve = EditorGUILayout.CurveField(label, curve.curve);
+		} else {
+			curve.value = EditorGUILayout.FloatField(label, curve.value);
+		}
+		curve.useCurve = MakeCurveToggle(curve.useCurve);
+		EditorGUILayout.EndHorizontal();
 	}
 
 };

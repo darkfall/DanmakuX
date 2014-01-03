@@ -5,16 +5,21 @@ using System;
 public class DMKSettings: MonoBehaviour {
 
 	public static string Version = "0.1";
+	static DMKSettings _instance = null;
 	public static DMKSettings instance {
 		get {
-			DMKSettings settings = (DMKSettings)GameObject.FindObjectOfType<DMKSettings>();
-			if(!settings) {
-				GameObject settingsObj = new GameObject();
-				settings = settingsObj.AddComponent<DMKSettings>();
-				settingsObj.name = "DanmakuX";
-				UnityEditor.EditorUtility.SetDirty(settingsObj);
+			if(_instance == null) {
+				DMKSettings settings = (DMKSettings)GameObject.FindObjectOfType<DMKSettings>();
+				if(!settings) {
+					GameObject settingsObj = new GameObject();
+					settings = settingsObj.AddComponent<DMKSettings>();
+					settingsObj.name = "DanmakuX";
+					UnityEditor.EditorUtility.SetDirty(settingsObj);
+				}
+				_instance = settings;
+				return settings;
 			}
-			return settings;
+			return _instance;
 		}
 	}
 
