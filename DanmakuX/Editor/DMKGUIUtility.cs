@@ -43,12 +43,16 @@ public class DMKGUIUtility {
 	}
 
 	public static int MakeSimpleList(int selectedIndex, System.Collections.IList entries) {
+		return MakeSimpleList(selectedIndex, entries, () => {});
+	}
+
+	public static int MakeSimpleList(int selectedIndex, System.Collections.IList entries, Action onSelectionChange) {
 		if(!Initialized) {
 			DMKGUIUtility.Init();
 		}
 		if(entries.Count == 0)
 			return selectedIndex;
-
+		
 		EditorGUILayout.BeginVertical(boxStyle);
 		int newSelectedIndex = -1;
 		{
@@ -58,12 +62,14 @@ public class DMKGUIUtility {
 					newSelectedIndex = index;
 				}
 			} 
-
 		}
-
+		
 		EditorGUILayout.EndVertical();
-
-		return newSelectedIndex == -1 ? selectedIndex : newSelectedIndex;
+		
+		int result = newSelectedIndex == -1 ? selectedIndex : newSelectedIndex;
+		if(result != selectedIndex)
+			onSelectionChange();
+		return result;
 	}
 
 	
@@ -81,6 +87,17 @@ public class DMKGUIUtility {
 		}
 		curve.useCurve = MakeCurveToggle(curve.useCurve);
 		EditorGUILayout.EndHorizontal();
+	}
+
+	public static void DrawSceneRect(Rect r, float z) {
+		Handles.DrawLine(new Vector3(r.x, r.y, z) ,
+		                 new Vector3(r.x, r.y + r.height, z));
+		Handles.DrawLine(new Vector3(r.x, r.y + r.height, z) ,
+		                 new Vector3(r.x + r.width, r.y + r.height, z));
+		Handles.DrawLine(new Vector3(r.x + r.width, r.y + r.height, z) ,
+		                 new Vector3(r.x + r.width, r.y, z));
+		Handles.DrawLine(new Vector3(r.x + r.width, r.y, z) ,
+		                 new Vector3(r.x, r.y, z));
 	}
 
 };

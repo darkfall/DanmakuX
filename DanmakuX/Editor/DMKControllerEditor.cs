@@ -42,7 +42,10 @@ class DMKControllerEditor: Editor {
 		if(selectedController.danmakus.Count == 0) {
 			EditorGUILayout.HelpBox("No Danmakus Available", MessageType.Info);
 		} else {
-			selectedPreviewIndex = DMKGUIUtility.MakeSimpleList(selectedPreviewIndex, selectedController.danmakus);
+			selectedPreviewIndex = DMKGUIUtility.MakeSimpleList(selectedPreviewIndex, selectedController.danmakus, () => {
+				selectedController.StartAttack(-1);
+				selectedController.paused = false;
+			});
 			if(selectedPreviewIndex >= selectedController.danmakus.Count)
 				selectedPreviewIndex = -1;
 			
@@ -52,10 +55,11 @@ class DMKControllerEditor: Editor {
 					if(selectedController.currentAttackIndex != -1) {
 						if(GUILayout.Button("Stop")) {
 							selectedController.StartAttack(-1);
+							selectedController.paused = false;
 						}
 					} else {
 						if(GUILayout.Button("Play")) {
-							selectedController.StartAttack(0);
+							selectedController.StartAttack(selectedPreviewIndex);
 						}
 					}
 					selectedController.paused = (GUILayout.Toggle(selectedController.paused, "Pause", "button"));

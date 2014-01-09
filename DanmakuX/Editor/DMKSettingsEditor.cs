@@ -21,6 +21,9 @@ public class DMKSettingsEditor: EditorWindow {
 		DMKSettings.instance.unitPerPixel = 1f / DMKSettings.instance.pixelPerUnit;
 		DMKSettings.instance.frameInterval = 1f / DMKSettings.instance.targetFPS;
 
+		EditorGUILayout.HelpBox("Global max number of bullets. Can be changed in individual danmakus.", MessageType.None);
+		DMKSettings.instance.MaxNumBullets = EditorGUILayout.IntField("Max N-Bullets", DMKSettings.instance.MaxNumBullets);
+
 		EditorGUILayout.HelpBox("Orthographic Size and Offset are measured in units, see Pixel To Units to convert to pixels", MessageType.None);
 	
 		DMKSettings.instance.mainCamera = (Camera)EditorGUILayout.ObjectField("Camera", DMKSettings.instance.mainCamera, typeof(Camera), true);
@@ -45,6 +48,8 @@ public class DMKSettingsEditor: EditorWindow {
 		
 		GUI.skin.label.wordWrap = true;
 		GUILayout.EndVertical();
+
+		SceneView.RepaintAll();
 	}
 
 	public void OnGUI() {

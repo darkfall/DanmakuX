@@ -17,6 +17,7 @@ public class DMKSettings: MonoBehaviour {
 					UnityEditor.EditorUtility.SetDirty(settingsObj);
 				}
 				_instance = settings;
+			
 				return settings;
 			}
 			return _instance;
@@ -27,17 +28,25 @@ public class DMKSettings: MonoBehaviour {
 	public float frameInterval = 1f / 60;
 	public int pixelPerUnit = 100;
 	public float unitPerPixel = 1f / 100;
+	
+	[SerializeField]
+	Camera _mainCamera;
 
-	public Camera mainCamera;
+	public Camera mainCamera {
+		set { _mainCamera = value; }
+		get {
+			if(_mainCamera != null)
+				return _mainCamera;
+			return Camera.main;
+		}
+	}
 	public bool useCustomOrthoSize = false;
 	public float centerOffsetX = 0;
 	public float centerOffsetY = 0;
 	public float orthoSizeVertical = 8;
 	public float orthoSizeHorizontal = 6;
 
-	public void Awake() {
-
-	}
+	public int MaxNumBullets = 0;
 
 	public bool CheckNeedInternalTimer() {
 		Application.targetFrameRate = -1;
@@ -53,17 +62,16 @@ public class DMKSettings: MonoBehaviour {
 
 	public Rect GetCameraRect() {
 		Camera camera = mainCamera;
-		if(camera == null)
-			camera = Camera.main;
 		if(!camera.isOrthoGraphic)
 			Debug.LogError("DMKSettings: No valid orthographic caemra found, please assign a orthographic camera in settings");
 
 		Vector3 pos = Camera.main.transform.position;
 		float   orthoV = useCustomOrthoSize ? orthoSizeVertical : Camera.main.orthographicSize;
 		float   orthoH = useCustomOrthoSize ? orthoSizeHorizontal : Camera.main.orthographicSize * Camera.main.aspect;
-		return new Rect(pos.x - orthoH, 
-		                pos.y - orthoV, 
+		return new Rect(pos.x - orthoH + centerOffsetX, 
+		                pos.y - orthoV + centerOffsetY, 
 		                orthoH * 2, 
 		                orthoV * 2);
 	}
+
 }
