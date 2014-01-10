@@ -283,6 +283,7 @@ class DMKDanmakuEditor: EditorWindow {
 					{
 						//emitter.identifier = EditorGUILayout.TextField("Identifier", emitter.identifier);
 						emitter.bulletContainer = (GameObject)EditorGUILayout.ObjectField("Bullet Container", emitter.bulletContainer, typeof(GameObject), true);
+
 						emitter.cooldown 	= EditorGUILayout.IntField("Cooldown", emitter.cooldown);
 						if(emitter.cooldown < 0)
 							emitter.cooldown = 0;
@@ -292,6 +293,13 @@ class DMKDanmakuEditor: EditorWindow {
 						emitter.interval	= EditorGUILayout.IntField("Interval", emitter.interval);
 						if(emitter.interval < 0)
 							emitter.interval = 0;
+						emitter.start		= EditorGUILayout.IntField("Start Frame", emitter.start);
+						if(emitter.start < 0)
+							emitter.start = 0;
+						emitter.simulationCount = EditorGUILayout.IntField("Simulation Count", emitter.simulationCount);
+						if(emitter.simulationCount <= 0)
+							emitter.simulationCount = 1;
+
 						EditorGUILayout.Space();
 						emitter.tag  	 	= EditorGUILayout.TextField("Tag", emitter.tag);
 						emitter.gameObject = (GameObject)EditorGUILayout.ObjectField("Parent Object", emitter.gameObject, typeof(GameObject), true);
@@ -299,7 +307,7 @@ class DMKDanmakuEditor: EditorWindow {
 						GUILayout.BeginHorizontal();
 						{
 							GUILayout.Label("Position Offset");
-							emitter.usePositionOffCurve = DMKGUIUtility.MakeCurveToggle(emitter.usePositionOffCurve);
+							emitter.positionOffset.type = (DMKPositionOffsetType)EditorGUILayout.EnumPopup(emitter.positionOffset.type);
 						}
 						GUILayout.EndHorizontal();
 						
@@ -307,13 +315,7 @@ class DMKDanmakuEditor: EditorWindow {
 						{
 							GUILayout.Space (32);
 							GUILayout.BeginVertical();
-							
-							if(emitter.usePositionOffCurve) {
-								emitter.positionOffsetX	= EditorGUILayout.CurveField("X", emitter.positionOffsetX);
-								emitter.positionOffsetY	= EditorGUILayout.CurveField("Y", emitter.positionOffsetY);
-							} else {
-								emitter.positionOffset = EditorGUILayout.Vector2Field("", emitter.positionOffset);
-							}
+							emitter.positionOffset.OnEditorGUI(false);
 							GUILayout.EndVertical();
 						}
 						GUILayout.EndHorizontal();

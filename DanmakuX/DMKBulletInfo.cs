@@ -4,34 +4,6 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [System.Serializable]
-public class DMKCurveProperty {
-	public float 			value = 0f;
-	public bool  			useCurve = false;
-	public AnimationCurve 	curve = null;
-
-	public DMKCurveProperty(float v = 0) {
-		value = v;
-		curve = DMKUtil.NewCurve(0, 0);
-	}
-	public DMKCurveProperty(float v1, float v2) {
-		value = 0f;
-		curve = DMKUtil.NewCurve(v1, v2);
-	}
-
-	public float Update(float t) {
-		if(useCurve)
-			value = curve.Evaluate(t);
-		return value;
-	}
-
-	public void CopyFrom(DMKCurveProperty p) {
-		value 		= p.value;
-		useCurve 	= p.useCurve;
-		curve 		= p.curve;
-	}
-};
-
-[System.Serializable]
 public class DMKBulletInfoInternal {
 	public float  direction = 0;
 	public int    damage = 1;
@@ -59,15 +31,11 @@ public class DMKBulletInfoInternal {
 	}
 
 	public void CopyFrom(DMKBulletInfoInternal prototype) {
-		this.speed.CopyFrom(prototype.speed);
-		this.accel.CopyFrom(prototype.accel);
-		this.angularAccel.CopyFrom(prototype.angularAccel);
-		this.angularAccel.value =  prototype.angularAccel.value * Mathf.Deg2Rad;
-
 		this.bulletSprite = prototype.bulletSprite;
 		this.damage = prototype.damage;
-		this.speed = prototype.speed;
-		this.accel = prototype.accel;
+		this.speed = DMKCurveProperty.CopyFrom(prototype.speed);
+		this.accel = DMKCurveProperty.CopyFrom(prototype.accel);
+		this.angularAccel = DMKCurveProperty.CopyFrom(prototype.angularAccel);
 		this.bulletColor = prototype.bulletColor;
 		this.died = false;
 

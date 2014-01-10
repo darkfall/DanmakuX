@@ -65,9 +65,13 @@ public class DMKCircleEmitter: DMKBulletEmitter {
 		base.OnEditorGUI();
 
 		this.bulletCount = EditorGUILayout.IntField("Bullet Count", this.bulletCount);
+		if(this.bulletCount < 0)
+			this.bulletCount = 0;
+
 		this.radius 	 = EditorGUILayout.FloatField("Emission Radius", this.radius);
 		this.accel1		 = EditorGUILayout.FloatField("Acceleration 1", this.accel1);
 		this.accel2 	 = EditorGUILayout.FloatField("Acceleration 2", this.accel2);
+		this._acceleration = this.accel1;
 
 		this.trackTarget = EditorGUILayout.Toggle("Facing Target", this.trackTarget);
 		if(!this.trackTarget) {

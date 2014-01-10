@@ -14,7 +14,6 @@ public class DMKSettings: MonoBehaviour {
 					GameObject settingsObj = new GameObject();
 					settings = settingsObj.AddComponent<DMKSettings>();
 					settingsObj.name = "DanmakuX";
-					UnityEditor.EditorUtility.SetDirty(settingsObj);
 				}
 				_instance = settings;
 			

@@ -155,7 +155,8 @@ public class DMKController: MonoBehaviour {
 					info.accel.Update(currentTime);
 					info.speed.value += info.accel.value;
 					info.angularAccel.Update(currentTime);
-					info.angularAccel.value *= Mathf.Deg2Rad;
+					if(info.angularAccel.useCurve)
+						info.angularAccel.value *= Mathf.Deg2Rad;
 					
 					if(info.angularAccel.value != 0f) {
 						info.direction += info.angularAccel.value;

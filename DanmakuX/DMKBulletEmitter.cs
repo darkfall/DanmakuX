@@ -13,10 +13,25 @@ public class DMKBulletEmitter: ScriptableObject {
 	public GameObject	bulletContainer;
 	public string 		tag;
 	public string 		identifier;
+	public int 			simulationCount = 1;
 
+	[SerializeField]
 	int _cooldown = 30;
+	[SerializeField]
 	int _length = 0;
+	[SerializeField]
 	int _interval = 0;
+	[SerializeField]
+	int _startFrame = 0;
+
+	public int start {
+		get { return _startFrame; }
+		set {
+			if(value != _startFrame) 
+				DMKInit();
+			_startFrame = value;
+		}
+	}
 
 	public int cooldown {
 		get { return _cooldown; }
@@ -46,11 +61,9 @@ public class DMKBulletEmitter: ScriptableObject {
 	}
 
 	public GameObject	gameObject;
-	
-	public bool				usePositionOffCurve;
-	public Vector2	 		positionOffset;
-	public AnimationCurve 	positionOffsetX;
-	public AnimationCurve 	positionOffsetY;
+
+	[SerializeField]
+	public DMKPositionOffset positionOffset = new DMKPositionOffset();
 
 	public List<DMKBulletInfo> bullets;
 
@@ -58,9 +71,9 @@ public class DMKBulletEmitter: ScriptableObject {
 	public bool	enabled { 
 		get { return _enabled; }
 		set { 
+			if(_enabled != value)
+				DMKInit();
 			_enabled = value;
-			if(_enabled)
-				this.DMKInit();
 		}
 	}
 
@@ -68,11 +81,13 @@ public class DMKBulletEmitter: ScriptableObject {
 	int _currentInterval = 0;
 	int _prevFrame = 0;
 	int _currentFrame = 0;
+	int _internalFrame = 0;
 
 	public void Start() {
 		_currentCooldown = 0;
 		_currentInterval = 0;
 		_prevFrame = 0;
+		_internalFrame = 0;
 	}
 
 	public void Update() {
@@ -97,8 +112,13 @@ public class DMKBulletEmitter: ScriptableObject {
 			if(length == 0 || currentFrame - _prevFrame < length) {
 				if(_currentCooldown != 0) {
 					--_currentCooldown;
-				} else {
-					this.DMKShoot(currentFrame);
+				}
+				if(_currentCooldown == 0) {
+					for(int i=0; i<this.simulationCount; ++i) {
+						this.DMKShoot(currentFrame);
+						if(i != 0)
+							_internalFrame += 1;
+					}
 					
 					_currentCooldown = this.cooldown;
 				}
@@ -116,7 +136,7 @@ public class DMKBulletEmitter: ScriptableObject {
 	}
 
 	public virtual void DMKInit() {
-		_currentCooldown = _currentFrame = _currentInterval = _prevFrame = 0;
+		_currentCooldown = _currentFrame = _currentInterval = _prevFrame = _internalFrame = 0;
 	}
 
 	public virtual string DMKName() {
@@ -161,14 +181,11 @@ public class DMKBulletEmitter: ScriptableObject {
 			
 			bullet.transform.localScale = new Vector3(this.bulletInfo.scale.x, this.bulletInfo.scale.y, 1);
 			bullet.transform.rotation = Quaternion.AngleAxis(direction + 90, Vector3.forward);
-			if(!this.usePositionOffCurve) {
-				position.x += this.positionOffset.x;
-				position.y += this.positionOffset.y;
-			} else {
-				float ctime = _currentFrame * DMKSettings.instance.frameInterval;
-				position.x += this.positionOffsetX.Evaluate(ctime);
-				position.y += this.positionOffsetY.Evaluate(ctime);
-			}
+
+			float ctime = (_currentFrame + _internalFrame) * DMKSettings.instance.frameInterval;
+			Vector2 offset = this.positionOffset.Evaluate(ctime);
+			position.x += offset.x;
+			position.y += offset.y;
 			bullet.transform.position = position;
 			
 			bullet.tag = this.tag;
