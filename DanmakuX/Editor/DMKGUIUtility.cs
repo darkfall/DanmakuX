@@ -42,16 +42,18 @@ public class DMKGUIUtility {
 		return style;
 	}
 
-	public static int MakeSimpleList(int selectedIndex, System.Collections.IList entries) {
-		return MakeSimpleList(selectedIndex, entries, () => {});
+	public static int MakeSimpleList(int selectedIndex, System.Collections.IList entries, TextAnchor textAlignment = TextAnchor.MiddleCenter) {
+		return MakeSimpleList(selectedIndex, entries, () => {}, textAlignment);
 	}
 
-	public static int MakeSimpleList(int selectedIndex, System.Collections.IList entries, Action onSelectionChange) {
+	public static int MakeSimpleList(int selectedIndex, System.Collections.IList entries, Action onSelectionChange, TextAnchor textAlignment = TextAnchor.MiddleCenter) {
 		if(!Initialized) {
 			DMKGUIUtility.Init();
 		}
 		if(entries.Count == 0)
 			return selectedIndex;
+
+		listEntryNormal.alignment = listEntryFocused.alignment = textAlignment;
 		
 		EditorGUILayout.BeginVertical(boxStyle);
 		int newSelectedIndex = -1;

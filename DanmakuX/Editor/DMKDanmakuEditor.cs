@@ -9,6 +9,7 @@ class DMKDanmakuEditor: EditorWindow {
 	public static int PreviewTextureWidth = 48;
 	public static int PreviewTextureHeight = 48;
 	public static int LeftPaneWidth = 154;
+	public static int RightPaneColumnWidth = 300;
 
 	public int 			  asSelectedIndex = 0;
 	public DMKDanmaku	  asSelectedStyle;
@@ -33,7 +34,6 @@ class DMKDanmakuEditor: EditorWindow {
 	}
 
 	public void OnFocus() {
-		this.OnSelectionChange();
 	}
 
 	public void OnSelectionChange() {
@@ -163,6 +163,24 @@ class DMKDanmakuEditor: EditorWindow {
 		}
 	}
 
+	void OnAddDeathEmitterClicked(object userData) {
+		string typeName = userData as String;
+
+		DMKDeathBulletEmitter emitter = ScriptableObject.CreateInstance(typeName) as DMKDeathBulletEmitter;
+		if(emitter != null) {
+			_selectedEmitter.deathEmitter = emitter;
+			emitter.bulletContainer = _selectedEmitter.bulletContainer;
+			emitter.parentController = _selectedEmitter.parentController;
+			emitter.tag = _selectedEmitter.tag;
+
+		}
+		EditorUtility.SetDirty(this.selectedController.gameObject);
+	}
+
+	void OnRemoveDeathEmitterClicked() {
+		_selectedEmitter.deathEmitter = null;
+	}
+
 	void DisplayEmitterToolsMenu() {
 		GenericMenu menu = new GenericMenu();
 		
@@ -172,6 +190,21 @@ class DMKDanmakuEditor: EditorWindow {
 			menu.AddItem(new GUIContent("Paste"), false, OnMenuPasteClicked);
 		else
 			menu.AddDisabledItem(new GUIContent("Paste"));
+		menu.AddSeparator("");
+
+		if(_selectedEmitter.deathEmitter == null) {
+			foreach(System.Reflection.Assembly asm in AppDomain.CurrentDomain.GetAssemblies()) {
+				foreach(Type type in asm.GetTypes()) {
+					if(type == typeof(DMKDeathBulletEmitter)) {
+						menu.AddItem(new GUIContent("[DeathEmitte] Add" + type.ToString()), false, OnAddDeathEmitterClicked, type.ToString());
+					}
+				}
+			}
+		} else {
+			menu.AddItem(new GUIContent("Remove Death Emitter"), false, OnRemoveDeathEmitterClicked);
+		}
+
+
 		menu.AddSeparator("");
 		menu.AddItem(new GUIContent("Remove"), false, OnMenuRemoveClicked);
 		menu.ShowAsContext();
@@ -209,7 +242,8 @@ class DMKDanmakuEditor: EditorWindow {
 		foreach(System.Reflection.Assembly asm in AppDomain.CurrentDomain.GetAssemblies()) {
 			foreach(Type type in asm.GetTypes()) {
 				if(type.BaseType == typeof(DMKBulletEmitter)) {
-					menu.AddItem(new GUIContent(type.ToString()), false, OnAddEmitterClicked, type.ToString());
+					if(type != typeof(DMKDeathBulletEmitter))
+						menu.AddItem(new GUIContent(type.ToString()), false, OnAddEmitterClicked, type.ToString());
 				}
 			}
 		}
@@ -242,6 +276,7 @@ class DMKDanmakuEditor: EditorWindow {
 
 		if(asSelectedStyle != null && asSelectedIndex >= 0 && asSelectedIndex < selectedController.danmakus.Count) {
 			emitterScrollPosition = GUILayout.BeginScrollView(emitterScrollPosition);
+
 			GUILayout.BeginVertical("box");
 			asSelectedStyle.name = EditorGUILayout.TextField("Name", asSelectedStyle.name);
 			danmakuNames[asSelectedIndex] = asSelectedStyle.name;
@@ -249,15 +284,17 @@ class DMKDanmakuEditor: EditorWindow {
 			selectedController.maxBulletCount = EditorGUILayout.IntField("Max Num Bullets", selectedController.maxBulletCount);
 			GUILayout.EndVertical();
 			GUILayout.BeginVertical("box");
-			GUILayout.BeginHorizontal();
 			{
+				GUILayout.BeginHorizontal();
+				{
 
-				GUILayout.Label(asSelectedStyle.emitters.Count.ToString() + " Emitters");
-				if(GUILayout.Button("+", "label", GUILayout.Width(16))) {
-					this.DisplayNewEmitterMenu();
+					GUILayout.Label(asSelectedStyle.emitters.Count.ToString() + " Emitters");
+					if(GUILayout.Button("+", "label", GUILayout.Width(16))) {
+						this.DisplayNewEmitterMenu();
+					}
 				}
+				GUILayout.EndHorizontal();
 			}
-			GUILayout.EndHorizontal();
 			foreach(DMKBulletEmitter emitter in asSelectedStyle.emitters) {
 				GUILayout.BeginVertical("box");
 				{
@@ -279,48 +316,179 @@ class DMKDanmakuEditor: EditorWindow {
 				}
 
 				if(emitter.editorExpanded) {
-					EditorGUILayout.BeginVertical();
-					{
-						//emitter.identifier = EditorGUILayout.TextField("Identifier", emitter.identifier);
-						emitter.bulletContainer = (GameObject)EditorGUILayout.ObjectField("Bullet Container", emitter.bulletContainer, typeof(GameObject), true);
-
-						emitter.cooldown 	= EditorGUILayout.IntField("Cooldown", emitter.cooldown);
-						if(emitter.cooldown < 0)
-							emitter.cooldown = 0;
-						emitter.length		= EditorGUILayout.IntField("Length", emitter.length);
-						if(emitter.length < 0)
-							emitter.length = 0;
-						emitter.interval	= EditorGUILayout.IntField("Interval", emitter.interval);
-						if(emitter.interval < 0)
-							emitter.interval = 0;
-						emitter.start		= EditorGUILayout.IntField("Start Frame", emitter.start);
-						if(emitter.start < 0)
-							emitter.start = 0;
-						emitter.simulationCount = EditorGUILayout.IntField("Simulation Count", emitter.simulationCount);
-						if(emitter.simulationCount <= 0)
-							emitter.simulationCount = 1;
-
-						EditorGUILayout.Space();
-						emitter.tag  	 	= EditorGUILayout.TextField("Tag", emitter.tag);
-						emitter.gameObject = (GameObject)EditorGUILayout.ObjectField("Parent Object", emitter.gameObject, typeof(GameObject), true);
-
-						GUILayout.BeginHorizontal();
-						{
-							GUILayout.Label("Position Offset");
-							emitter.positionOffset.type = (DMKPositionOffsetType)EditorGUILayout.EnumPopup(emitter.positionOffset.type);
-						}
-						GUILayout.EndHorizontal();
+					if(emitter.deathEmitter == null) {
+						this.EmitterGUI(emitter);
+					} else {
+						EditorGUILayout.BeginHorizontal();
 						
-						GUILayout.BeginHorizontal();
-						{
-							GUILayout.Space (32);
-							GUILayout.BeginVertical();
-							emitter.positionOffset.OnEditorGUI(false);
-							GUILayout.EndVertical();
-						}
-						GUILayout.EndHorizontal();
+						EditorGUILayout.BeginVertical(GUILayout.MaxWidth(RightPaneColumnWidth));
+						this.EmitterGUI(emitter);
+						EditorGUILayout.EndVertical();
 
-						/*
+						Rect r = GUILayoutUtility.GetLastRect();
+
+						EditorGUILayout.BeginVertical("box");
+						emitter.deathEmitter.editorExpanded = EditorGUILayout.Foldout(emitter.deathEmitter.editorExpanded, "Death Emitter");
+						if(emitter.deathEmitter.editorExpanded)
+							this.DeathEmitterGUI(emitter.deathEmitter);
+						EditorGUILayout.EndVertical();
+
+						EditorGUILayout.EndHorizontal();
+					}
+				}
+				GUILayout.EndVertical();
+			}
+			
+			GUILayout.EndVertical();
+			
+			GUILayout.EndScrollView();
+		}
+		
+		GUILayout.EndArea();
+	}
+
+	void EmitterGUILowerPart_InfoEmitter(DMKBulletEmitter emitter) {
+		EditorGUILayout.BeginVertical("box");
+		{
+			EditorGUILayout.BeginHorizontal();
+			EditorGUILayout.BeginVertical();
+			
+			string bulletInfoStr = "Bullet Info";
+			if(!emitter.editorBulletInfoExpanded) {
+				bulletInfoStr = String.Format("Bullet Info (Speed = {0}, Accel = {1}, Lifetime = {2})", 
+				                              emitter.bulletInfo.speed.value,
+				                              emitter.bulletInfo.accel.value,
+				                              emitter.bulletInfo.maxLifetime);
+			}
+			emitter.editorBulletInfoExpanded = EditorGUILayout.Foldout(emitter.editorBulletInfoExpanded, bulletInfoStr);
+			
+			if(emitter.editorBulletInfoExpanded) {
+				EditorGUILayout.BeginHorizontal();
+				
+				{
+					EditorGUILayout.BeginVertical();
+					emitter.bulletInfo.bulletSprite = EditorGUILayout.ObjectField("Sprite", emitter.bulletInfo.bulletSprite, typeof(Sprite), false) as Sprite;
+					emitter.bulletInfo.bulletColor  = EditorGUILayout.ColorField("Color", emitter.bulletInfo.bulletColor);
+					EditorGUILayout.EndVertical();
+				}
+				
+				GUILayoutOption[] options = {GUILayout.Width(PreviewTextureWidth), GUILayout.Height(PreviewTextureHeight)};
+				GUILayout.Label("", "textarea", options);
+				
+				{
+					// here's the trick
+					// the begin/endvertical will create a rect on the right side of the panel
+					// and with getLastRect we can get that rect
+					// thus we can get the position we need to draw the preview texture
+					Sprite sprite = emitter.bulletInfo.bulletSprite;
+					if(sprite != null) {
+						Texture2D tex = sprite.texture;
+						if(tex != null) {
+							Rect r = GUILayoutUtility.GetLastRect();
+							
+							r.x += Mathf.Clamp((PreviewTextureWidth - sprite.rect.width)/2, 0, PreviewTextureWidth);
+							r.y += Mathf.Clamp((PreviewTextureHeight - sprite.rect.height)/2, 0, PreviewTextureHeight);
+							r.width = sprite.rect.width;
+							r.height = sprite.rect.height;
+							
+							Rect texR = new Rect((float)sprite.rect.x / tex.width,
+							                     (float)sprite.rect.y / tex.height,
+							                     (float)sprite.rect.width / tex.width,
+							                     (float)sprite.rect.height / tex.height);
+							Color c = GUI.color;
+							GUI.color = emitter.bulletInfo.bulletColor;
+							GUI.DrawTextureWithTexCoords(r, 
+							                             tex, 
+							                             texR,
+							                             true);
+							GUI.color = c;
+						}
+					}
+				}
+				
+				EditorGUILayout.EndHorizontal();
+				
+				EditorGUILayout.Separator();
+				
+				DMKBulletInfoInternal bulletInfo = emitter.bulletInfo;
+				DMKGUIUtility.MakeCurveControl(ref bulletInfo.speed, "Speed");
+				DMKGUIUtility.MakeCurveControl(ref bulletInfo.accel, "Acceleration");
+				DMKGUIUtility.MakeCurveControl(ref bulletInfo.angularAccel, "Angular Accel");
+				
+				GUILayout.BeginHorizontal();
+				{
+					GUILayout.Label("Scale");
+					bulletInfo.useScaleCurve = DMKGUIUtility.MakeCurveToggle(bulletInfo.useScaleCurve);
+				}
+				GUILayout.EndHorizontal();
+				
+				GUILayout.BeginHorizontal();
+				{
+					GUILayout.Space (32);
+					GUILayout.BeginVertical();
+					
+					if(bulletInfo.useScaleCurve) {
+						bulletInfo.scaleCurveX = EditorGUILayout.CurveField("Scale X", bulletInfo.scaleCurveX);
+						bulletInfo.scaleCurveY = EditorGUILayout.CurveField("Scale Y", bulletInfo.scaleCurveY);
+					} else {
+						bulletInfo.scale = EditorGUILayout.Vector2Field("", bulletInfo.scale);
+					}
+					GUILayout.EndVertical();
+				}
+				GUILayout.EndHorizontal();
+				
+				emitter.bulletInfo.damage = EditorGUILayout.IntField("Damage", emitter.bulletInfo.damage);
+				emitter.bulletInfo.maxLifetime = EditorGUILayout.IntField("Lifetime (Frame)", emitter.bulletInfo.maxLifetime);
+			}
+			EditorGUILayout.EndVertical();
+			EditorGUILayout.EndHorizontal();
+		}
+		EditorGUILayout.EndVertical();
+		
+		EditorGUILayout.BeginVertical("box");
+		string emitterStr = "Emitter ";
+		if(!emitter.editorEmitterInfoExpanded)
+			emitterStr += emitter.DMKSummary();
+		emitter.editorEmitterInfoExpanded = EditorGUILayout.Foldout(emitter.editorEmitterInfoExpanded, emitterStr);
+		if(emitter.editorEmitterInfoExpanded) {
+			emitter.OnEditorGUI();
+		}
+		EditorGUILayout.EndVertical();
+	}
+
+	void DeathEmitterGUI(DMKDeathBulletEmitter emitter) {
+		EditorGUILayout.BeginVertical();
+		{
+			emitter.cooldown 	= EditorGUILayout.IntField("Cooldown", emitter.cooldown);
+			if(emitter.cooldown < 0)
+				emitter.cooldown = 0;
+			emitter.length		= EditorGUILayout.IntField("Length", emitter.length);
+			if(emitter.length < 0)
+				emitter.length = 0;
+			emitter.interval	= EditorGUILayout.IntField("Interval", emitter.interval);
+			if(emitter.interval < 0)
+				emitter.interval = 0;
+			emitter.start		= EditorGUILayout.IntField("Start Frame", emitter.start);
+			if(emitter.start < 0)
+				emitter.start = 0;
+
+			GUILayout.BeginHorizontal();
+			{
+				GUILayout.Label("Position Offset");
+				emitter.positionOffset.type = (DMKPositionOffsetType)EditorGUILayout.EnumPopup(emitter.positionOffset.type);
+			}
+			GUILayout.EndHorizontal();
+			
+			GUILayout.BeginHorizontal();
+			{
+				GUILayout.Space (32);
+				GUILayout.BeginVertical();
+				emitter.positionOffset.OnEditorGUI(false);
+				GUILayout.EndVertical();
+			}
+			GUILayout.EndHorizontal();
+			
+			/*
 						emitter.editorDeathSubEmitterIndex = EditorGUILayout.Popup("Death SubEmitter", emitter.editorDeathSubEmitterIndex, BuildSubEmitterList(emitter));
 						if(emitter.editorDeathSubEmitterIndex > 0) {
 							if(emitter.deathSubEmitter != null)
@@ -332,127 +500,74 @@ class DMKDanmakuEditor: EditorWindow {
 						if(emitter.deathParentEmitter != null)
 							EditorGUILayout.LabelField("Parent Emitter", emitter.deathParentEmitter.identifier);
 						*/
-					}
-					EditorGUILayout.Separator();
-					EditorGUILayout.EndVertical();
+		}
+		EditorGUILayout.Separator();
+		EditorGUILayout.EndVertical();
 
-					EditorGUILayout.BeginVertical("box");
-					{
-						EditorGUILayout.BeginHorizontal();
-						EditorGUILayout.BeginVertical();
+		EmitterGUILowerPart_InfoEmitter(emitter);
+	}
 
-						string bulletInfoStr = "Bullet Info";
-						if(!emitter.editorBulletInfoExpanded) {
-							bulletInfoStr = String.Format("Bullet Info (Speed = {0}, Accel = {1}, Lifetime = {2})", 
-							                              emitter.bulletInfo.speed.value,
-							                              emitter.bulletInfo.accel.value,
-							                              emitter.bulletInfo.maxLifetime);
-						}
-						emitter.editorBulletInfoExpanded = EditorGUILayout.Foldout(emitter.editorBulletInfoExpanded, bulletInfoStr);
+	void EmitterGUI(DMKBulletEmitter emitter) {
+		EditorGUILayout.BeginVertical();
+		{
+			//emitter.identifier = EditorGUILayout.TextField("Identifier", emitter.identifier);
+			emitter.bulletContainer = (GameObject)EditorGUILayout.ObjectField("Bullet Container", emitter.bulletContainer, typeof(GameObject), true);
+			
+			emitter.cooldown 	= EditorGUILayout.IntField("Cooldown", emitter.cooldown);
+			if(emitter.cooldown < 0)
+				emitter.cooldown = 0;
+			emitter.length		= EditorGUILayout.IntField("Length", emitter.length);
+			if(emitter.length < 0)
+				emitter.length = 0;
+			emitter.interval	= EditorGUILayout.IntField("Interval", emitter.interval);
+			if(emitter.interval < 0)
+				emitter.interval = 0;
+			emitter.start		= EditorGUILayout.IntField("Start Frame", emitter.start);
+			if(emitter.start < 0)
+				emitter.start = 0;
+			emitter.simulationCount = EditorGUILayout.IntField("Simulation Count", emitter.simulationCount);
+			if(emitter.simulationCount <= 0)
+				emitter.simulationCount = 1;
+			
+			EditorGUILayout.Space();
+			emitter.tag  	 	= EditorGUILayout.TextField("Tag", emitter.tag);
 
-						if(emitter.editorBulletInfoExpanded) {
-							EditorGUILayout.BeginHorizontal();
-
-							{
-								EditorGUILayout.BeginVertical();
-								emitter.bulletInfo.bulletSprite = EditorGUILayout.ObjectField("Sprite", emitter.bulletInfo.bulletSprite, typeof(Sprite), false) as Sprite;
-								emitter.bulletInfo.bulletColor  = EditorGUILayout.ColorField("Color", emitter.bulletInfo.bulletColor);
-								EditorGUILayout.EndVertical();
-							}
-
-							GUILayoutOption[] options = {GUILayout.Width(PreviewTextureWidth), GUILayout.Height(PreviewTextureHeight)};
-							GUILayout.Label("", "textarea", options);
-							
-							{
-								// here's the trick
-								// the begin/endvertical will create a rect on the right side of the panel
-								// and with getLastRect we can get that rect
-								// thus we can get the position we need to draw the preview texture
-								Sprite sprite = emitter.bulletInfo.bulletSprite;
-								if(sprite != null) {
-									Texture2D tex = sprite.texture;
-									if(tex != null) {
-										Rect r = GUILayoutUtility.GetLastRect();
-										
-										r.x += Mathf.Clamp((PreviewTextureWidth - sprite.rect.width)/2, 0, PreviewTextureWidth);
-										r.y += Mathf.Clamp((PreviewTextureHeight - sprite.rect.height)/2, 0, PreviewTextureHeight);
-										r.width = sprite.rect.width;
-										r.height = sprite.rect.height;
-										
-										Rect texR = new Rect((float)sprite.rect.x / tex.width,
-										                     (float)sprite.rect.y / tex.height,
-										                     (float)sprite.rect.width / tex.width,
-										                     (float)sprite.rect.height / tex.height);
-										Color c = GUI.color;
-										GUI.color = emitter.bulletInfo.bulletColor;
-										GUI.DrawTextureWithTexCoords(r, 
-										                             tex, 
-										                             texR,
-										                             true);
-										GUI.color = c;
-									}
-								}
-							}
-							
-							EditorGUILayout.EndHorizontal();
-							
-							EditorGUILayout.Separator();
-							
-							DMKBulletInfoInternal bulletInfo = emitter.bulletInfo;
-							DMKGUIUtility.MakeCurveControl(ref bulletInfo.speed, "Speed");
-							DMKGUIUtility.MakeCurveControl(ref bulletInfo.accel, "Acceleration");
-							DMKGUIUtility.MakeCurveControl(ref bulletInfo.angularAccel, "Angular Accel");
-							
-							GUILayout.BeginHorizontal();
-							{
-								GUILayout.Label("Scale");
-								bulletInfo.useScaleCurve = DMKGUIUtility.MakeCurveToggle(bulletInfo.useScaleCurve);
-							}
-							GUILayout.EndHorizontal();
-							
-							GUILayout.BeginHorizontal();
-							{
-								GUILayout.Space (32);
-								GUILayout.BeginVertical();
-								
-								if(bulletInfo.useScaleCurve) {
-									bulletInfo.scaleCurveX = EditorGUILayout.CurveField("Scale X", bulletInfo.scaleCurveX);
-									bulletInfo.scaleCurveY = EditorGUILayout.CurveField("Scale Y", bulletInfo.scaleCurveY);
-								} else {
-									bulletInfo.scale = EditorGUILayout.Vector2Field("", bulletInfo.scale);
-								}
-								GUILayout.EndVertical();
-							}
-							GUILayout.EndHorizontal();
-								
-							emitter.bulletInfo.damage = EditorGUILayout.IntField("Damage", emitter.bulletInfo.damage);
-							emitter.bulletInfo.maxLifetime = EditorGUILayout.IntField("Lifetime (Frame)", emitter.bulletInfo.maxLifetime);
-						}
-						EditorGUILayout.EndVertical();
-						EditorGUILayout.EndHorizontal();
-					}
-					EditorGUILayout.EndVertical();
-					
-					EditorGUILayout.BeginVertical("box");
-					string emitterStr = "Emitter ";
-					if(!emitter.editorEmitterInfoExpanded)
-						emitterStr += emitter.DMKSummary();
-					emitter.editorEmitterInfoExpanded = EditorGUILayout.Foldout(emitter.editorEmitterInfoExpanded, emitterStr);
-					if(emitter.editorEmitterInfoExpanded) {
-						emitter.OnEditorGUI();
-					}
-					EditorGUILayout.EndVertical();
-				}
+			if(emitter.positionOffset.type != DMKPositionOffsetType.Absolute)
+				emitter.gameObject = (GameObject)EditorGUILayout.ObjectField("Parent Object", emitter.gameObject, typeof(GameObject), true);
+			
+			GUILayout.BeginHorizontal();
+			{
+				GUILayout.Label("Position Offset");
+				emitter.positionOffset.type = (DMKPositionOffsetType)EditorGUILayout.EnumPopup(emitter.positionOffset.type);
+			}
+			GUILayout.EndHorizontal();
+			
+			GUILayout.BeginHorizontal();
+			{
+				GUILayout.Space (32);
+				GUILayout.BeginVertical();
+				emitter.positionOffset.OnEditorGUI(false);
 				GUILayout.EndVertical();
 			}
-
-			GUILayout.EndVertical();
+			GUILayout.EndHorizontal();
 			
-			GUILayout.EndScrollView();
+			/*
+						emitter.editorDeathSubEmitterIndex = EditorGUILayout.Popup("Death SubEmitter", emitter.editorDeathSubEmitterIndex, BuildSubEmitterList(emitter));
+						if(emitter.editorDeathSubEmitterIndex > 0) {
+							if(emitter.deathSubEmitter != null)
+								emitter.deathSubEmitter.deathParentEmitter = null;
+							emitter.deathSubEmitter = asSelectedStyle.emitters[emitter.editorDeathSubEmitterIndex];
+							emitter.deathSubEmitter.deathParentEmitter = emitter;
+						} else
+							emitter.editorDeathSubEmitterIndex = -1;
+						if(emitter.deathParentEmitter != null)
+							EditorGUILayout.LabelField("Parent Emitter", emitter.deathParentEmitter.identifier);
+						*/
 		}
+		EditorGUILayout.Separator();
+		EditorGUILayout.EndVertical();
 
-		GUILayout.EndArea();
-
+		EmitterGUILowerPart_InfoEmitter(emitter);
 	}
 
 	void UnavailableGUI() {

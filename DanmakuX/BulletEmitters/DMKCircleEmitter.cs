@@ -40,7 +40,7 @@ public class DMKCircleEmitter: DMKBulletEmitter {
 				                   Mathf.Sin(angle * Mathf.Deg2Rad) * radius,
 				                   0);
 			}
-			this.ShootBullet(this.gameObject.transform.position + diff,
+			this.ShootBullet(diff,
 			                 angle);
 		}
 	}
@@ -56,7 +56,6 @@ public class DMKCircleEmitter: DMKBulletEmitter {
 	public override void CopyFrom (DMKBulletEmitter emitter)
 	{
 		base.CopyFrom (emitter);
-	
 	}
 
 	#region editor

@@ -5,7 +5,8 @@ using UnityEditor;
 public enum DMKPositionOffsetType {
 	Circular,
 	Curve,
-	Fixed,
+	Relative,
+	Absolute
 }
 
 [Serializable]
@@ -34,7 +35,7 @@ public class DMKPositionOffset {
 	public DMKPositionOffsetInterface evaluator;
 
 	public DMKPositionOffset() {
-		this._type = DMKPositionOffsetType.Fixed;
+		this._type = DMKPositionOffsetType.Relative;
 	}
 
 	public Vector2 Evaluate(float t) {

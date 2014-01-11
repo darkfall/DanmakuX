@@ -65,6 +65,9 @@ public class DMKBulletEmitter: ScriptableObject {
 	[SerializeField]
 	public DMKPositionOffset positionOffset = new DMKPositionOffset();
 
+	[SerializeField]
+	public DMKDeathBulletEmitter deathEmitter = null;
+
 	public List<DMKBulletInfo> bullets;
 
 	bool  _enabled;
@@ -77,11 +80,11 @@ public class DMKBulletEmitter: ScriptableObject {
 		}
 	}
 
-	int _currentCooldown = 0;
-	int _currentInterval = 0;
-	int _prevFrame = 0;
-	int _currentFrame = 0;
-	int _internalFrame = 0;
+	protected int _currentCooldown = 0;
+ 	protected int _currentInterval = 0;
+	protected int _prevFrame = 0;
+	protected int _currentFrame = 0;
+	protected int _internalFrame = 0;
 
 	public void Start() {
 		_currentCooldown = 0;
@@ -129,6 +132,9 @@ public class DMKBulletEmitter: ScriptableObject {
 					enabled = false;
 			}
 		}
+
+		if(deathEmitter != null)
+			deathEmitter.DMKUpdateFrame(currentFrame);
 	}
 
 	public virtual void DMKShoot(int frame) {
@@ -137,6 +143,8 @@ public class DMKBulletEmitter: ScriptableObject {
 
 	public virtual void DMKInit() {
 		_currentCooldown = _currentFrame = _currentInterval = _prevFrame = _internalFrame = 0;
+		if(deathEmitter != null)
+			deathEmitter.DMKInit();
 	}
 
 	public virtual string DMKName() {
@@ -186,9 +194,12 @@ public class DMKBulletEmitter: ScriptableObject {
 			Vector2 offset = this.positionOffset.Evaluate(ctime);
 			position.x += offset.x;
 			position.y += offset.y;
+			if(positionOffset.type != DMKPositionOffsetType.Absolute && this.gameObject != null)
+				position += this.gameObject.transform.position;
 			bullet.transform.position = position;
 			
 			bullet.tag = this.tag;
+			bullet.parentEmitter = this;
 
 			parentController.bulletContainer.Add(bullet);
 			return bullet;

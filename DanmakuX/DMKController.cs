@@ -174,6 +174,8 @@ public class DMKController: MonoBehaviour {
 						info.died = true;
 						diedBullets.Add(bullet);
 
+						if(bullet.parentEmitter.deathEmitter != null)
+							bullet.parentEmitter.deathEmitter.AddTrackObject(bullet.gameObject);
 					}
 				} else {
 					diedBullets.Add(bullet);

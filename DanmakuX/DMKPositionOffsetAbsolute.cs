@@ -3,7 +3,7 @@ using UnityEditor;
 using System;
 
 [Serializable]
-class DMKPositionOffsetFixed: DMKPositionOffsetInterface {
+class DMKPositionOffsetAbsolute: DMKPositionOffsetInterface {
 	public Vector2 offset;
 	
 	public override Vector2 Evaluate(float t) {
@@ -14,5 +14,4 @@ class DMKPositionOffsetFixed: DMKPositionOffsetInterface {
 		offset = EditorGUILayout.Vector2Field("", offset);
 	}
 }
-
 

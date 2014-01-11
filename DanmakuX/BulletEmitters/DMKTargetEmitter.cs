@@ -3,7 +3,7 @@ using UnityEngine;
 
 class DMKTargetEmitter: DMKBulletEmitter {
 	public override void DMKShoot(int frame) {
-		this.ShootBulletTo(this.gameObject.transform.position,
+		this.ShootBulletTo(new Vector3(0, 0, 0),
 		                   null);
 	}
 

@@ -51,5 +51,7 @@ public class DMKBulletInfoInternal {
 public class DMKBulletInfo: MonoBehaviour {
 
 	public DMKBulletInfoInternal bulletInfo = new DMKBulletInfoInternal();
+	public DMKBulletEmitter parentEmitter = null;
+
 
 };
