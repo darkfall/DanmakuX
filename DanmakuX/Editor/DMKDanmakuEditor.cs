@@ -475,11 +475,15 @@ class DMKDanmakuEditor: EditorWindow {
 	void DeathEmitterGUI(DMKDeathBulletEmitter emitter) {
 		EditorGUILayout.BeginVertical();
 		{
+			EditorGUI.BeginChangeCheck();
 			emitter.emissionCooldown = (int)Mathf.Clamp(EditorGUILayout.IntField("Emission CD", emitter.emissionCooldown), 0, 999999);
 			emitter.emissionLength = (int)Mathf.Clamp(EditorGUILayout.IntField("Emission Length", emitter.emissionLength), 0, 999999);
 			emitter.interval = (int)Mathf.Clamp(EditorGUILayout.IntField("Emission Interval", emitter.interval), 0, 999999);
 			emitter.startFrame = (int)Mathf.Clamp(EditorGUILayout.IntField("Start Frame", emitter.startFrame), 0, 999999);
 			emitter.overallLength = (int)Mathf.Clamp(EditorGUILayout.IntField("Overall Length", emitter.overallLength), 0, 999999);
+			if(EditorGUI.EndChangeCheck()) {
+				emitter.DMKInit();
+			}
 
 			GUILayout.BeginHorizontal();
 			{
@@ -521,13 +525,19 @@ class DMKDanmakuEditor: EditorWindow {
 		{
 			//emitter.identifier = EditorGUILayout.TextField("Identifier", emitter.identifier);
 			emitter.bulletContainer = (GameObject)EditorGUILayout.ObjectField("Bullet Container", emitter.bulletContainer, typeof(GameObject), true);
-			
+
+			EditorGUI.BeginChangeCheck();
 			emitter.emissionCooldown = (int)Mathf.Clamp(EditorGUILayout.IntField("Emission Cooldown", emitter.emissionCooldown), 0, 999999);
 			emitter.emissionLength = (int)Mathf.Clamp(EditorGUILayout.IntField("Emission Length", emitter.emissionLength), 0, 999999);
 			emitter.interval = (int)Mathf.Clamp(EditorGUILayout.IntField("Emission Interval", emitter.interval), 0, 999999);
 			emitter.startFrame = (int)Mathf.Clamp(EditorGUILayout.IntField("Start Frame", emitter.startFrame), 0, 999999);
 			emitter.overallLength = (int)Mathf.Clamp(EditorGUILayout.IntField("Overall Length", emitter.overallLength), 0, 999999);
+			if(EditorGUI.EndChangeCheck()) {
+				emitter.DMKInit();
+			}
+
 			emitter.simulationCount = (int)Mathf.Clamp(EditorGUILayout.IntField("Simulation Count", emitter.simulationCount), 1, 999999);
+
 			
 			EditorGUILayout.Space();
 			emitter.tag  	 	= EditorGUILayout.TextField("Tag", emitter.tag);

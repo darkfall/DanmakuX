@@ -44,63 +44,13 @@ public class DMKBulletEmitter: ScriptableObject {
 	public string 		identifier;
 	public int 			simulationCount = 1;
 
-	[SerializeField]
-	int _emissionCooldown = 30;
-	[SerializeField]
-	int _emissionLength = 0;
-	[SerializeField]
-	int _interval = 0;
-	[SerializeField]
-	int _startFrame = 0;
-	[SerializeField]
-	int _overallLength = 0;
+	public int emissionCooldown = 30;
+	public int emissionLength = 0;
+	public int interval = 0;
+	public int startFrame = 0;
+	public int overallLength = 0;
 
-	public int startFrame {
-		get { return _startFrame; }
-		set {
-			if(value != _startFrame) 
-				DMKInit();
-			_startFrame = value;
-		}
-	}
-
-	public int emissionCooldown {
-		get { return _emissionCooldown; }
-		set {
-			if(value != _emissionCooldown)
-				DMKInit();
-			_emissionCooldown = value;
-		}
-	}
-
-	public int emissionLength {
-		get { return _emissionLength; }
-		set {
-			if(value != _emissionLength)
-				DMKInit();
-			_emissionLength = value;
-		}
-	}
-
-	public int interval {
-		get { return _interval; }
-		set {
-			if(value != _interval)
-				DMKInit();
-			_interval = value;
-		}
-	}
-
-	public int overallLength {
-		get { return _overallLength; }
-		set {
-			if(value != _overallLength) 
-				DMKInit();
-			_overallLength = value;
-		}
-	}
-
-	public GameObject	gameObject;
+	public GameObject gameObject;
 
 	[SerializeField]
 	public DMKPositionOffset positionOffset = new DMKPositionOffset();
@@ -125,7 +75,7 @@ public class DMKBulletEmitter: ScriptableObject {
 
 	public bool Ended {
 		get {
-			return (_overallLength != 0 && (_currentFrame - _startFrame) >= _overallLength);
+			return (overallLength != 0 && (_currentFrame - startFrame) >= overallLength);
 		}
 	}
 
