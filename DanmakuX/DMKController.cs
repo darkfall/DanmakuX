@@ -5,25 +5,6 @@ using System.Collections;
 using System.Collections.Generic;
 
 [Serializable]
-public class DMKDanmaku {
-	public string name;
-
-	[SerializeField]
-	public List<DMKBulletEmitter> emitters;
-
-	public override string ToString() {
-		return name;
-	}
-
-#region editor
-
-	public bool editorExpanded = true;
-
-#endregion
-
-};
-
-[Serializable]
 public class DMKController: MonoBehaviour {
 
 	[SerializeField]
@@ -49,8 +30,6 @@ public class DMKController: MonoBehaviour {
 			_prevTime = EditorApplication.timeSinceStartup;
 		else
 			_prevTime = Time.timeSinceLevelLoad;
-
-		_currentFrame = 0;
 	}
 
 	public void Start() {
@@ -58,8 +37,6 @@ public class DMKController: MonoBehaviour {
 			_prevTime = EditorApplication.timeSinceStartup;
 		else
 			_prevTime = Time.timeSinceLevelLoad;
-
-		_currentFrame = 0;
 		this.StartAttack(-1);
 	}
 
@@ -97,10 +74,7 @@ public class DMKController: MonoBehaviour {
 	public void StartAttack(int index) {
 		if(currentAttackIndex != -1) {
 			if(currentAttackIndex < this.danmakus.Count) {
-				foreach(DMKBulletEmitter emitter in this.danmakus[currentAttackIndex].emitters) {
-					emitter.enabled = false;
-					emitter.parentController = this;
-				}
+				this.danmakus[currentAttackIndex].Stop();
 			} else
 				currentAttackIndex = -1;
 		}
@@ -112,27 +86,19 @@ public class DMKController: MonoBehaviour {
 			Debug.LogError("DMKController::StartAttack: invalid index " + index.ToString());
 		}
 		if(index == -1) {
-			foreach(DMKBulletInfo bullet in this.bulletContainer) {
-				try {
+			try {
+				foreach(DMKBulletInfo bullet in this.bulletContainer) {
 					DestroyImmediate(bullet.gameObject);
-				} catch {
-
 				}
+			} catch {
+				
 			}
 			this.bulletContainer.Clear();
 		} else {
-			foreach(DMKBulletEmitter emitter in this.danmakus[currentAttackIndex].emitters) {
-//				if(emitter.deathParentEmitter == null) {
-					if(Application.isEditor)
-						emitter.enabled = true && emitter.editorEnabled;
-					else
-						emitter.enabled = true;
-		//		}
-				// otherwise will be initiated by parent emitter
-			}
+			this.danmakus[currentAttackIndex].Play(this);
 		}
-		_currentFrame = 0;
 		paused = false;
+		_currentFrame = 0;
 	}
 
 	void DMKUpdate() {
@@ -149,8 +115,7 @@ public class DMKController: MonoBehaviour {
 					                                                   prevPos.y + (float)(dist * Mathf.Sin (info.direction)), 
 					                                                   prevPos.z);
 
-					int frame = _currentFrame - info.startFrame;
-					float currentTime = (float)(frame) / 60;
+					float currentTime = (float)(info.lifeFrame) / 60;
 					info.speed.Update(currentTime);
 					info.accel.Update(currentTime);
 					info.speed.value += info.accel.value;
@@ -169,7 +134,7 @@ public class DMKController: MonoBehaviour {
 						                                                     1f);
 					}
 
-					if((info.maxLifetime != 0 && info.maxLifetime <= frame) ||
+					if((info.maxLifetime != 0 && info.maxLifetime <= info.lifeFrame) ||
 					   !cameraRect.Contains(bullet.transform.position)) {
 						info.died = true;
 						diedBullets.Add(bullet);
@@ -177,6 +142,8 @@ public class DMKController: MonoBehaviour {
 						if(bullet.parentEmitter.deathEmitter != null)
 							bullet.parentEmitter.deathEmitter.AddTrackObject(bullet.gameObject);
 					}
+
+					info.lifeFrame++;
 				} else {
 					diedBullets.Add(bullet);
 				}
@@ -190,11 +157,7 @@ public class DMKController: MonoBehaviour {
 				}
 			);
 
-			foreach(DMKBulletEmitter emitter in this.danmakus[currentAttackIndex].emitters) {
-				emitter.DMKUpdateFrame(_currentFrame);
-			}
-
-			_currentFrame += 1;
+			this.danmakus[currentAttackIndex].Update();
 		}
 	}
 

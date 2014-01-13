@@ -5,6 +5,35 @@ using UnityEngine;
 using UnityEditor;
 
 [Serializable]
+public class DMKBulletEmitterMixinInterface: ScriptableObject {
+	public DMKBulletEmitterMixinInterface next = null;
+	public DMKBulletEmitter				  parentEmitter = null;
+
+	public virtual void DMKUpdateFrame(int currentFrame) {
+		if(next != null)
+			next.DMKUpdateFrame(currentFrame);
+	}
+	
+	public virtual void DMKShoot(int frame) {
+		if(next != null)
+			next.DMKShoot(frame);
+	}
+	
+	public virtual void DMKInit() {
+		if(next != null)
+			next.DMKInit();
+	}
+	
+	public virtual string DMKName() {
+		return "DMK Bullet Emitter";
+	}
+	
+	public virtual string DMKSummary() {
+		return "";
+	}
+};
+
+[Serializable]
 public class DMKBulletEmitter: ScriptableObject {
 
 	public DMKController parentController = null;
@@ -16,15 +45,17 @@ public class DMKBulletEmitter: ScriptableObject {
 	public int 			simulationCount = 1;
 
 	[SerializeField]
-	int _cooldown = 30;
+	int _emissionCooldown = 30;
 	[SerializeField]
-	int _length = 0;
+	int _emissionLength = 0;
 	[SerializeField]
 	int _interval = 0;
 	[SerializeField]
 	int _startFrame = 0;
+	[SerializeField]
+	int _overallLength = 0;
 
-	public int start {
+	public int startFrame {
 		get { return _startFrame; }
 		set {
 			if(value != _startFrame) 
@@ -33,21 +64,21 @@ public class DMKBulletEmitter: ScriptableObject {
 		}
 	}
 
-	public int cooldown {
-		get { return _cooldown; }
+	public int emissionCooldown {
+		get { return _emissionCooldown; }
 		set {
-			if(value != _cooldown)
+			if(value != _emissionCooldown)
 				DMKInit();
-			_cooldown = value;
+			_emissionCooldown = value;
 		}
 	}
 
-	public int length {
-		get { return _length; }
+	public int emissionLength {
+		get { return _emissionLength; }
 		set {
-			if(value != _length)
+			if(value != _emissionLength)
 				DMKInit();
-			_length = value;
+			_emissionLength = value;
 		}
 	}
 
@@ -60,6 +91,15 @@ public class DMKBulletEmitter: ScriptableObject {
 		}
 	}
 
+	public int overallLength {
+		get { return _overallLength; }
+		set {
+			if(value != _overallLength) 
+				DMKInit();
+			_overallLength = value;
+		}
+	}
+
 	public GameObject	gameObject;
 
 	[SerializeField]
@@ -67,6 +107,9 @@ public class DMKBulletEmitter: ScriptableObject {
 
 	[SerializeField]
 	public DMKDeathBulletEmitter deathEmitter = null;
+
+	[SerializeField]
+	public DMKBulletEmitterMixinInterface emitter = null;
 
 	public List<DMKBulletInfo> bullets;
 
@@ -77,6 +120,12 @@ public class DMKBulletEmitter: ScriptableObject {
 			if(_enabled != value)
 				DMKInit();
 			_enabled = value;
+		}
+	}
+
+	public bool Ended {
+		get {
+			return (_overallLength != 0 && (_currentFrame - _startFrame) >= _overallLength);
 		}
 	}
 
@@ -103,16 +152,19 @@ public class DMKBulletEmitter: ScriptableObject {
 	}
 
 	public virtual void DMKUpdateFrame(int currentFrame) {
-		if(!enabled)
+		_currentFrame = currentFrame;
+
+		if(!enabled || 
+		   currentFrame < startFrame ||
+		   this.Ended)
 			return;
 
-		_currentFrame = currentFrame;
 		if(_currentInterval != 0) {
 			--_currentInterval;
 			if(_currentInterval == 0)
 				_prevFrame = currentFrame;
 		} else {
-			if(length == 0 || currentFrame - _prevFrame < length) {
+			if(this.emissionLength == 0 || currentFrame - _prevFrame < this.emissionLength) {
 				if(_currentCooldown != 0) {
 					--_currentCooldown;
 				}
@@ -123,7 +175,7 @@ public class DMKBulletEmitter: ScriptableObject {
 							_internalFrame += 1;
 					}
 					
-					_currentCooldown = this.cooldown;
+					_currentCooldown = this.emissionCooldown;
 				}
 			} else {
 				_prevFrame = currentFrame;
@@ -157,12 +209,18 @@ public class DMKBulletEmitter: ScriptableObject {
 
 	public virtual void CopyFrom(DMKBulletEmitter emitter) {
 		this.interval 			= emitter.interval;
-		this.cooldown 			= emitter.cooldown;
-		this.length   			= emitter.length;
+		this.emissionCooldown	= emitter.emissionCooldown;
+		this.emissionLength		= emitter.emissionLength;
 		this.positionOffset 	= emitter.positionOffset;
 		this.bulletContainer 	= emitter.bulletContainer;
 		this.gameObject 		= emitter.gameObject;
 		this.tag 				= emitter.tag;
+		if(emitter.deathEmitter != null) {
+			this.deathEmitter = (DMKDeathBulletEmitter)ScriptableObject.CreateInstance(emitter.deathEmitter.GetType());
+			this.deathEmitter.CopyFrom(emitter.deathEmitter);
+		}
+		else
+			this.deathEmitter = null;
 
 		this.bulletInfo.CopyFrom(emitter.bulletInfo);
 	}
@@ -172,17 +230,14 @@ public class DMKBulletEmitter: ScriptableObject {
 			GameObject bulletObj = new GameObject();
 			DMKBulletInfo bullet = bulletObj.AddComponent<DMKBulletInfo>();
 
-			//bullet.deathSubEmitter = this.deathSubEmitter;
 			bullet.bulletInfo.CopyFrom(this.bulletInfo);
 			bullet.bulletInfo.direction = direction * Mathf.Deg2Rad;
-			bullet.bulletInfo.startFrame = _currentFrame;
+			bullet.bulletInfo.lifeFrame = 0;
 
 			SpriteRenderer renderer = bulletObj.AddComponent<SpriteRenderer>();
 			renderer.sprite = this.bulletInfo.bulletSprite;
 			renderer.color = this.bulletInfo.bulletColor;
 			renderer.sortingOrder = 1;
-			
-			//bulletObj.AddComponent<BoxCollider2D>().isTrigger = true;
 
 			if(bulletContainer != null)
 				bullet.transform.parent = bulletContainer.transform;

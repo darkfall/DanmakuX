@@ -41,7 +41,7 @@ public class DMKDeathBulletEmitter: DMKBulletEmitter {
 				if(currentInterval == 0)
 					prevFrame = currentFrame;
 			} else {
-				if(parent.length == 0 || currentFrame - prevFrame < parent.length) {
+				if(parent.emissionLength == 0 || currentFrame - prevFrame < parent.emissionLength) {
 					if(currentCooldown != 0) {
 						--currentCooldown;
 					}
@@ -50,7 +50,7 @@ public class DMKDeathBulletEmitter: DMKBulletEmitter {
 						parent.gameObject = null;
 						parent.objectOffset = this.objectOffset;
 						parent.DMKShoot(currentFrame);
-						currentCooldown = parent.cooldown;
+						currentCooldown = parent.emissionCooldown;
 					}
 				} else {
 					prevFrame = currentFrame;

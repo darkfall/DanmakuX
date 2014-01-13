@@ -11,8 +11,8 @@ class DMKDanmakuEditor: EditorWindow {
 	public static int LeftPaneWidth = 154;
 	public static int RightPaneColumnWidth = 300;
 
-	public int 			  asSelectedIndex = 0;
-	public DMKDanmaku	  asSelectedStyle;
+	public int 			  selectedDanmakuIndex = 0;
+	public DMKDanmaku	  selectedDanmaku;
 
 	public DMKController selectedController;
 	// used to display names
@@ -52,18 +52,18 @@ class DMKDanmakuEditor: EditorWindow {
 			} else
 				selectedController = null;
 
-			asSelectedIndex = -1;
-			asSelectedStyle = null;
+			selectedDanmakuIndex = -1;
+			selectedDanmaku = null;
 			if(selectedController != null && selectedController.danmakus.Count > 0) {
-				asSelectedIndex = 0;
-				asSelectedStyle = selectedController.danmakus[0];
+				selectedDanmakuIndex = 0;
+				selectedDanmaku = selectedController.danmakus[0];
 			}
 			
 			this.Repaint();
 		} catch {
 			selectedController = null;
-			asSelectedIndex = -1;
-			asSelectedStyle = null;
+			selectedDanmakuIndex = -1;
+			selectedDanmaku = null;
 		}
 
 	}
@@ -92,24 +92,25 @@ class DMKDanmakuEditor: EditorWindow {
 					selectedController.danmakus.Add(style);
 					danmakuNames.Add(style.name);
 
-					asSelectedIndex = selectedController.danmakus.Count - 1;
-					asSelectedStyle = style;
+					selectedDanmakuIndex = selectedController.danmakus.Count - 1;
+					selectedDanmaku = style;
+					selectedDanmaku.parentController = selectedController;
 				}
 				EditorUtility.SetDirty(this.selectedController.gameObject);
 			}
 			if(GUILayout.Button("-", "label", GUILayout.Width(30))) {
-				if(asSelectedIndex >= 0 && selectedController != null) {
-					danmakuNames.RemoveAt(asSelectedIndex);
-					selectedController.danmakus.RemoveAt(asSelectedIndex);
+				if(selectedDanmakuIndex >= 0 && selectedController != null) {
+					danmakuNames.RemoveAt(selectedDanmakuIndex);
+					selectedController.danmakus.RemoveAt(selectedDanmakuIndex);
 
-					if(asSelectedIndex >= selectedController.danmakus.Count)
-						asSelectedIndex = selectedController.danmakus.Count - 1;
+					if(selectedDanmakuIndex >= selectedController.danmakus.Count)
+						selectedDanmakuIndex = selectedController.danmakus.Count - 1;
 					if(selectedController.danmakus.Count == 0)
-						asSelectedIndex = -1;
-					if(asSelectedIndex != -1)
-						asSelectedStyle = selectedController.danmakus[asSelectedIndex];
+						selectedDanmakuIndex = -1;
+					if(selectedDanmakuIndex != -1)
+						selectedDanmaku = selectedController.danmakus[selectedDanmakuIndex];
 					else
-						asSelectedStyle = null;
+						selectedDanmaku = null;
 
 					this.Repaint();
 					EditorUtility.SetDirty(this.selectedController.gameObject);
@@ -123,10 +124,10 @@ class DMKDanmakuEditor: EditorWindow {
 
 		{
 			if(danmakuNames.Count > 0) {
-				asSelectedIndex = DMKGUIUtility.MakeSimpleList(asSelectedIndex, danmakuNames.ToArray());
-				//asSelectedIndex = GUILayout.SelectionGrid(asSelectedIndex, danmakuNames.ToArray(), 1);
-				if(asSelectedIndex >= 0 && selectedController != null && selectedController.danmakus.Count > 0) {
-					asSelectedStyle = selectedController.danmakus[asSelectedIndex];
+				selectedDanmakuIndex = DMKGUIUtility.MakeSimpleList(selectedDanmakuIndex, danmakuNames.ToArray());
+				//selectedDanmakuIndex = GUILayout.SelectionGrid(selectedDanmakuIndex, danmakuNames.ToArray(), 1);
+				if(selectedDanmakuIndex >= 0 && selectedController != null && selectedController.danmakus.Count > 0) {
+					selectedDanmaku = selectedController.danmakus[selectedDanmakuIndex];
 				}
 			}
 		}
@@ -154,7 +155,7 @@ class DMKDanmakuEditor: EditorWindow {
 	void OnMenuRemoveClicked() {
 		if(EditorUtility.DisplayDialog("Remove Emitter", "Are you sure you want to remove this emitter?", "Yes", "No")) {
 			if(_selectedEmitter != null)
-				asSelectedStyle.emitters.Remove(_selectedEmitter);
+				selectedDanmaku.emitters.Remove(_selectedEmitter);
 //			if(_selectedEmitter.deathParentEmitter != null) {
 //				_selectedEmitter.deathParentEmitter.deathSubEmitter = null;
 //				_selectedEmitter.deathParentEmitter.editorDeathSubEmitterIndex = -1;
@@ -223,11 +224,11 @@ class DMKDanmakuEditor: EditorWindow {
 		emitter.gameObject = selectedController.transform.gameObject;
 		emitter.identifier = emitterTypeName;
 		
-		if(asSelectedStyle.emitters.Count > 0) {
-			emitter.bulletContainer = asSelectedStyle.emitters[0].bulletContainer;
-			emitter.tag = asSelectedStyle.emitters[0].tag;
+		if(selectedDanmaku.emitters.Count > 0) {
+			emitter.bulletContainer = selectedDanmaku.emitters[0].bulletContainer;
+			emitter.tag = selectedDanmaku.emitters[0].tag;
 		}
-		asSelectedStyle.emitters.Add( emitter );
+		selectedDanmaku.emitters.Add( emitter );
 		
 		if(selectedController.currentAttackIndex != -1) {
 			// playing
@@ -255,9 +256,9 @@ class DMKDanmakuEditor: EditorWindow {
 #endregion
 
 	string[] BuildSubEmitterList(DMKBulletEmitter currentEmitter) {
-		List<string> emitters = new List<string>(asSelectedStyle.emitters.Count);
+		List<string> emitters = new List<string>(selectedDanmaku.emitters.Count);
 		emitters.Add("None");
-		foreach(DMKBulletEmitter emitter in asSelectedStyle.emitters) {
+		foreach(DMKBulletEmitter emitter in selectedDanmaku.emitters) {
 			if(emitter != currentEmitter)
 				emitters.Add (emitter.identifier);
 		}
@@ -274,35 +275,50 @@ class DMKDanmakuEditor: EditorWindow {
 			return;
 		}
 
-		if(asSelectedStyle != null && asSelectedIndex >= 0 && asSelectedIndex < selectedController.danmakus.Count) {
+		if(selectedDanmaku != null && selectedDanmakuIndex >= 0 && selectedDanmakuIndex < selectedController.danmakus.Count) {
 			emitterScrollPosition = GUILayout.BeginScrollView(emitterScrollPosition);
 
-			GUILayout.BeginVertical("box");
-			asSelectedStyle.name = EditorGUILayout.TextField("Name", asSelectedStyle.name);
-			danmakuNames[asSelectedIndex] = asSelectedStyle.name;
+			{
+				GUILayout.BeginVertical("box");
+				selectedDanmaku.name = EditorGUILayout.TextField("Name", selectedDanmaku.name);
+				danmakuNames[selectedDanmakuIndex] = selectedDanmaku.name;
 
-			selectedController.maxBulletCount = EditorGUILayout.IntField("Max Num Bullets", selectedController.maxBulletCount);
-			GUILayout.EndVertical();
-			GUILayout.BeginVertical("box");
+				selectedController.maxBulletCount = EditorGUILayout.IntField("Max Num Bullets", selectedController.maxBulletCount);
+
+				selectedDanmaku.playMode = (DMKDanmakuPlayMode)EditorGUILayout.EnumPopup("Play Mode", selectedDanmaku.playMode);
+				if(selectedDanmaku.playMode != DMKDanmakuPlayMode.All) {
+					selectedDanmaku.playInterval = (int)Mathf.Clamp(EditorGUILayout.IntField("Interval", selectedDanmaku.playInterval), 0, 999999);
+				}
+
+				GUILayout.EndVertical();
+				GUILayout.BeginVertical("box");
+			}
 			{
 				GUILayout.BeginHorizontal();
 				{
 
-					GUILayout.Label(asSelectedStyle.emitters.Count.ToString() + " Emitters");
+					GUILayout.Label(selectedDanmaku.emitters.Count.ToString() + " Emitters");
 					if(GUILayout.Button("+", "label", GUILayout.Width(16))) {
 						this.DisplayNewEmitterMenu();
 					}
 				}
 				GUILayout.EndHorizontal();
 			}
-			foreach(DMKBulletEmitter emitter in asSelectedStyle.emitters) {
+			foreach(DMKBulletEmitter emitter in selectedDanmaku.emitters) {
 				GUILayout.BeginVertical("box");
 				{
 					EditorGUILayout.BeginHorizontal();
 					emitter.editorEnabled = EditorGUILayout.Toggle(emitter.editorEnabled, GUILayout.Width(12));
 					emitter.enabled = emitter.editorEnabled;
 
-					emitter.editorExpanded = EditorGUILayout.Foldout(emitter.editorExpanded, emitter.DMKName());
+					string emitterInfoStr = emitter.DMKName();
+					if(!emitter.editorExpanded) {
+						emitterInfoStr = String.Format("{0} (Start = {1}, Overall Length = {2})", 
+						                               emitter.DMKName(),
+						                               emitter.startFrame,
+						                               emitter.overallLength == 0 ? "INF" : emitter.overallLength.ToString());
+					}
+					emitter.editorExpanded = EditorGUILayout.Foldout(emitter.editorExpanded, emitterInfoStr);
 					/*if(!emitter.editorExpanded) {
 						GUILayout.Label("Identifier", GUILayout.Width(54));
 						emitter.identifier = EditorGUILayout.TextField(emitter.identifier, GUILayout.MaxWidth(120));
@@ -459,18 +475,11 @@ class DMKDanmakuEditor: EditorWindow {
 	void DeathEmitterGUI(DMKDeathBulletEmitter emitter) {
 		EditorGUILayout.BeginVertical();
 		{
-			emitter.cooldown 	= EditorGUILayout.IntField("Cooldown", emitter.cooldown);
-			if(emitter.cooldown < 0)
-				emitter.cooldown = 0;
-			emitter.length		= EditorGUILayout.IntField("Length", emitter.length);
-			if(emitter.length < 0)
-				emitter.length = 0;
-			emitter.interval	= EditorGUILayout.IntField("Interval", emitter.interval);
-			if(emitter.interval < 0)
-				emitter.interval = 0;
-			emitter.start		= EditorGUILayout.IntField("Start Frame", emitter.start);
-			if(emitter.start < 0)
-				emitter.start = 0;
+			emitter.emissionCooldown = (int)Mathf.Clamp(EditorGUILayout.IntField("Emission CD", emitter.emissionCooldown), 0, 999999);
+			emitter.emissionLength = (int)Mathf.Clamp(EditorGUILayout.IntField("Emission Length", emitter.emissionLength), 0, 999999);
+			emitter.interval = (int)Mathf.Clamp(EditorGUILayout.IntField("Emission Interval", emitter.interval), 0, 999999);
+			emitter.startFrame = (int)Mathf.Clamp(EditorGUILayout.IntField("Start Frame", emitter.startFrame), 0, 999999);
+			emitter.overallLength = (int)Mathf.Clamp(EditorGUILayout.IntField("Overall Length", emitter.overallLength), 0, 999999);
 
 			GUILayout.BeginHorizontal();
 			{
@@ -493,7 +502,7 @@ class DMKDanmakuEditor: EditorWindow {
 						if(emitter.editorDeathSubEmitterIndex > 0) {
 							if(emitter.deathSubEmitter != null)
 								emitter.deathSubEmitter.deathParentEmitter = null;
-							emitter.deathSubEmitter = asSelectedStyle.emitters[emitter.editorDeathSubEmitterIndex];
+							emitter.deathSubEmitter = selectedDanmaku.emitters[emitter.editorDeathSubEmitterIndex];
 							emitter.deathSubEmitter.deathParentEmitter = emitter;
 						} else
 							emitter.editorDeathSubEmitterIndex = -1;
@@ -513,21 +522,12 @@ class DMKDanmakuEditor: EditorWindow {
 			//emitter.identifier = EditorGUILayout.TextField("Identifier", emitter.identifier);
 			emitter.bulletContainer = (GameObject)EditorGUILayout.ObjectField("Bullet Container", emitter.bulletContainer, typeof(GameObject), true);
 			
-			emitter.cooldown 	= EditorGUILayout.IntField("Cooldown", emitter.cooldown);
-			if(emitter.cooldown < 0)
-				emitter.cooldown = 0;
-			emitter.length		= EditorGUILayout.IntField("Length", emitter.length);
-			if(emitter.length < 0)
-				emitter.length = 0;
-			emitter.interval	= EditorGUILayout.IntField("Interval", emitter.interval);
-			if(emitter.interval < 0)
-				emitter.interval = 0;
-			emitter.start		= EditorGUILayout.IntField("Start Frame", emitter.start);
-			if(emitter.start < 0)
-				emitter.start = 0;
-			emitter.simulationCount = EditorGUILayout.IntField("Simulation Count", emitter.simulationCount);
-			if(emitter.simulationCount <= 0)
-				emitter.simulationCount = 1;
+			emitter.emissionCooldown = (int)Mathf.Clamp(EditorGUILayout.IntField("Emission Cooldown", emitter.emissionCooldown), 0, 999999);
+			emitter.emissionLength = (int)Mathf.Clamp(EditorGUILayout.IntField("Emission Length", emitter.emissionLength), 0, 999999);
+			emitter.interval = (int)Mathf.Clamp(EditorGUILayout.IntField("Emission Interval", emitter.interval), 0, 999999);
+			emitter.startFrame = (int)Mathf.Clamp(EditorGUILayout.IntField("Start Frame", emitter.startFrame), 0, 999999);
+			emitter.overallLength = (int)Mathf.Clamp(EditorGUILayout.IntField("Overall Length", emitter.overallLength), 0, 999999);
+			emitter.simulationCount = (int)Mathf.Clamp(EditorGUILayout.IntField("Simulation Count", emitter.simulationCount), 1, 999999);
 			
 			EditorGUILayout.Space();
 			emitter.tag  	 	= EditorGUILayout.TextField("Tag", emitter.tag);
@@ -556,7 +556,7 @@ class DMKDanmakuEditor: EditorWindow {
 						if(emitter.editorDeathSubEmitterIndex > 0) {
 							if(emitter.deathSubEmitter != null)
 								emitter.deathSubEmitter.deathParentEmitter = null;
-							emitter.deathSubEmitter = asSelectedStyle.emitters[emitter.editorDeathSubEmitterIndex];
+							emitter.deathSubEmitter = selectedDanmaku.emitters[emitter.editorDeathSubEmitterIndex];
 							emitter.deathSubEmitter.deathParentEmitter = emitter;
 						} else
 							emitter.editorDeathSubEmitterIndex = -1;
