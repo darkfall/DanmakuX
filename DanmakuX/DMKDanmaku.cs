@@ -25,8 +25,11 @@ public class DMKDanmaku {
 
 	public int currentFrame;
 
+	[SerializeField]
 	List<DMKBulletEmitter> _availableEmitters;
+	[SerializeField]
 	DMKBulletEmitter	   _currentEmitter;
+	[SerializeField]
 	int				 	   _currentEmitterIndex;
 	int 				   _currentInterval;
 	
@@ -68,9 +71,10 @@ public class DMKDanmaku {
 	}
 	
 	public void Stop() {
-		foreach(DMKBulletEmitter emitter in _availableEmitters) {
-			emitter.enabled = false;
-		}
+		if(_availableEmitters != null)
+			foreach(DMKBulletEmitter emitter in _availableEmitters) {
+				emitter.enabled = false;
+			}
 	}
 	
 	public void Update() {

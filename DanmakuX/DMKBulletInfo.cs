@@ -30,17 +30,17 @@ public class DMKBulletInfoInternal {
 		scaleCurveY = DMKUtil.NewCurve(1, 1);
 	}
 
-	public void CopyFrom(DMKBulletInfoInternal prototype) {
+	public void CopyFrom(DMKBulletInfoInternal prototype, float speedMultiplier = 1f) {
 		this.bulletSprite = prototype.bulletSprite;
 		this.damage = prototype.damage;
-		this.speed = DMKCurveProperty.CopyFrom(prototype.speed);
-		this.accel = DMKCurveProperty.CopyFrom(prototype.accel);
-		this.angularAccel = DMKCurveProperty.CopyFrom(prototype.angularAccel);
+		this.speed = DMKCurveProperty.Copy(prototype.speed, speedMultiplier);
+		this.accel = DMKCurveProperty.Copy(prototype.accel);
+		this.angularAccel = DMKCurveProperty.Copy(prototype.angularAccel);
 		this.bulletColor = prototype.bulletColor;
 		this.died = false;
 
-		this.useScaleCurve = prototype.useScaleCurve;
-		this.scaleCurveX    = prototype.scaleCurveX;
+		this.useScaleCurve	= prototype.useScaleCurve;
+		this.scaleCurveX	= prototype.scaleCurveX;
 		this.scaleCurveY    = prototype.scaleCurveY;
 
 		this.collisionRect = prototype.collisionRect;

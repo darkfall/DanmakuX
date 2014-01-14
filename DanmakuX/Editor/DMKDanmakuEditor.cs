@@ -255,6 +255,31 @@ class DMKDanmakuEditor: EditorWindow {
 
 #endregion
 
+#region modifier menu
+
+	void OnAddModifierClicked(object userData) {
+		string modifierTypeName = userData as string;
+		
+		DMKEmitterModifier modifier = ScriptableObject.CreateInstance(modifierTypeName) as DMKEmitterModifier;
+		_selectedEmitter.AddModifier(modifier);
+	}
+
+	void DisplayNewModifierMenu() {
+		GenericMenu menu = new GenericMenu();
+		
+		foreach(System.Reflection.Assembly asm in AppDomain.CurrentDomain.GetAssemblies()) {
+			foreach(Type type in asm.GetTypes()) {
+				if(type.BaseType == typeof(DMKEmitterModifier)) {
+					menu.AddItem(new GUIContent(type.ToString()), false, OnAddModifierClicked, type.ToString());
+				}
+			}
+		}
+		
+		menu.ShowAsContext();
+	}
+
+#endregion
+
 	string[] BuildSubEmitterList(DMKBulletEmitter currentEmitter) {
 		List<string> emitters = new List<string>(selectedDanmaku.emitters.Count);
 		emitters.Add("None");
@@ -305,6 +330,8 @@ class DMKDanmakuEditor: EditorWindow {
 				GUILayout.EndHorizontal();
 			}
 			foreach(DMKBulletEmitter emitter in selectedDanmaku.emitters) {
+				_selectedEmitter = emitter;
+
 				GUILayout.BeginVertical("box");
 				{
 					EditorGUILayout.BeginHorizontal();
@@ -324,7 +351,6 @@ class DMKDanmakuEditor: EditorWindow {
 						emitter.identifier = EditorGUILayout.TextField(emitter.identifier, GUILayout.MaxWidth(120));
 					}*/
 					if(GUILayout.Button("Options", "label", GUILayout.Width(48))) {
-						_selectedEmitter = emitter;
 						this.DisplayEmitterToolsMenu();
 					}
 
@@ -363,7 +389,7 @@ class DMKDanmakuEditor: EditorWindow {
 		GUILayout.EndArea();
 	}
 
-	void EmitterGUILowerPart_InfoEmitter(DMKBulletEmitter emitter) {
+	void EmitterGUILowerPart_BulletInfo(DMKBulletEmitter emitter) {
 		EditorGUILayout.BeginVertical("box");
 		{
 			EditorGUILayout.BeginHorizontal();
@@ -460,7 +486,9 @@ class DMKDanmakuEditor: EditorWindow {
 			EditorGUILayout.EndHorizontal();
 		}
 		EditorGUILayout.EndVertical();
-		
+	}
+
+	void EmitterGUILowerPart_Emitter(DMKBulletEmitter emitter) {
 		EditorGUILayout.BeginVertical("box");
 		string emitterStr = "Emitter ";
 		if(!emitter.editorEmitterInfoExpanded)
@@ -472,11 +500,50 @@ class DMKDanmakuEditor: EditorWindow {
 		EditorGUILayout.EndVertical();
 	}
 
+	void EmitterGUILowerPart_Modifier(DMKBulletEmitter emitter) {
+		EditorGUILayout.BeginVertical("box");
+
+		EditorGUILayout.BeginHorizontal();
+		emitter.editorModifierExpanded = EditorGUILayout.Foldout(emitter.editorModifierExpanded, "Modifiers");
+		if(GUILayout.Button("+", "label", GUILayout.Width(16))) {
+			this.DisplayNewModifierMenu();
+		}
+		EditorGUILayout.EndHorizontal();
+
+		
+		DMKEmitterModifier modifier = emitter.emitterModifier;
+		while(modifier != null) {
+			EditorGUILayout.BeginVertical("box");
+
+			{
+				EditorGUILayout.BeginHorizontal();
+				GUILayout.Label(modifier.DMKName());
+				if(GUILayout.Button("-", "label", GUILayout.Width(16))) {
+					emitter.RemoveModifier(modifier);
+				}
+				EditorGUILayout.EndHorizontal();
+			}
+
+			modifier.OnEditorGUI();
+			EditorGUILayout.EndVertical();
+
+			modifier = modifier.next;
+		}
+
+		EditorGUILayout.EndVertical();
+	}
+
+	void EmitterGUILowerPart(DMKBulletEmitter emitter) {
+		EmitterGUILowerPart_BulletInfo(emitter);
+		EmitterGUILowerPart_Emitter(emitter);
+		EmitterGUILowerPart_Modifier(emitter);
+	}
+
 	void DeathEmitterGUI(DMKDeathBulletEmitter emitter) {
 		EditorGUILayout.BeginVertical();
 		{
 			EditorGUI.BeginChangeCheck();
-			emitter.emissionCooldown = (int)Mathf.Clamp(EditorGUILayout.IntField("Emission CD", emitter.emissionCooldown), 0, 999999);
+			DMKGUIUtility.MakeCurveControl(ref emitter.emissionCooldown, "Emission CD");
 			emitter.emissionLength = (int)Mathf.Clamp(EditorGUILayout.IntField("Emission Length", emitter.emissionLength), 0, 999999);
 			emitter.interval = (int)Mathf.Clamp(EditorGUILayout.IntField("Emission Interval", emitter.interval), 0, 999999);
 			emitter.startFrame = (int)Mathf.Clamp(EditorGUILayout.IntField("Start Frame", emitter.startFrame), 0, 999999);
@@ -500,24 +567,11 @@ class DMKDanmakuEditor: EditorWindow {
 				GUILayout.EndVertical();
 			}
 			GUILayout.EndHorizontal();
-			
-			/*
-						emitter.editorDeathSubEmitterIndex = EditorGUILayout.Popup("Death SubEmitter", emitter.editorDeathSubEmitterIndex, BuildSubEmitterList(emitter));
-						if(emitter.editorDeathSubEmitterIndex > 0) {
-							if(emitter.deathSubEmitter != null)
-								emitter.deathSubEmitter.deathParentEmitter = null;
-							emitter.deathSubEmitter = selectedDanmaku.emitters[emitter.editorDeathSubEmitterIndex];
-							emitter.deathSubEmitter.deathParentEmitter = emitter;
-						} else
-							emitter.editorDeathSubEmitterIndex = -1;
-						if(emitter.deathParentEmitter != null)
-							EditorGUILayout.LabelField("Parent Emitter", emitter.deathParentEmitter.identifier);
-						*/
 		}
 		EditorGUILayout.Separator();
 		EditorGUILayout.EndVertical();
 
-		EmitterGUILowerPart_InfoEmitter(emitter);
+		EmitterGUILowerPart(emitter);
 	}
 
 	void EmitterGUI(DMKBulletEmitter emitter) {
@@ -527,7 +581,7 @@ class DMKDanmakuEditor: EditorWindow {
 			emitter.bulletContainer = (GameObject)EditorGUILayout.ObjectField("Bullet Container", emitter.bulletContainer, typeof(GameObject), true);
 
 			EditorGUI.BeginChangeCheck();
-			emitter.emissionCooldown = (int)Mathf.Clamp(EditorGUILayout.IntField("Emission Cooldown", emitter.emissionCooldown), 0, 999999);
+			DMKGUIUtility.MakeCurveControl(ref emitter.emissionCooldown, "Emission CD");
 			emitter.emissionLength = (int)Mathf.Clamp(EditorGUILayout.IntField("Emission Length", emitter.emissionLength), 0, 999999);
 			emitter.interval = (int)Mathf.Clamp(EditorGUILayout.IntField("Emission Interval", emitter.interval), 0, 999999);
 			emitter.startFrame = (int)Mathf.Clamp(EditorGUILayout.IntField("Start Frame", emitter.startFrame), 0, 999999);
@@ -540,11 +594,8 @@ class DMKDanmakuEditor: EditorWindow {
 
 			
 			EditorGUILayout.Space();
-			emitter.tag  	 	= EditorGUILayout.TextField("Tag", emitter.tag);
+			emitter.tag = EditorGUILayout.TextField("Tag", emitter.tag);
 
-			if(emitter.positionOffset.type != DMKPositionOffsetType.Absolute)
-				emitter.gameObject = (GameObject)EditorGUILayout.ObjectField("Parent Object", emitter.gameObject, typeof(GameObject), true);
-			
 			GUILayout.BeginHorizontal();
 			{
 				GUILayout.Label("Position Offset");
@@ -556,28 +607,20 @@ class DMKDanmakuEditor: EditorWindow {
 			{
 				GUILayout.Space (32);
 				GUILayout.BeginVertical();
+				
+				if(emitter.positionOffset.type != DMKPositionOffsetType.Absolute)
+					emitter.gameObject = (GameObject)EditorGUILayout.ObjectField("Parent Object", emitter.gameObject, typeof(GameObject), true);
+
 				emitter.positionOffset.OnEditorGUI(false);
 				GUILayout.EndVertical();
 			}
 			GUILayout.EndHorizontal();
-			
-			/*
-						emitter.editorDeathSubEmitterIndex = EditorGUILayout.Popup("Death SubEmitter", emitter.editorDeathSubEmitterIndex, BuildSubEmitterList(emitter));
-						if(emitter.editorDeathSubEmitterIndex > 0) {
-							if(emitter.deathSubEmitter != null)
-								emitter.deathSubEmitter.deathParentEmitter = null;
-							emitter.deathSubEmitter = selectedDanmaku.emitters[emitter.editorDeathSubEmitterIndex];
-							emitter.deathSubEmitter.deathParentEmitter = emitter;
-						} else
-							emitter.editorDeathSubEmitterIndex = -1;
-						if(emitter.deathParentEmitter != null)
-							EditorGUILayout.LabelField("Parent Emitter", emitter.deathParentEmitter.identifier);
-						*/
+
 		}
 		EditorGUILayout.Separator();
 		EditorGUILayout.EndVertical();
 
-		EmitterGUILowerPart_InfoEmitter(emitter);
+		EmitterGUILowerPart(emitter);
 	}
 
 	void UnavailableGUI() {

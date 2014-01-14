@@ -5,35 +5,6 @@ using UnityEngine;
 using UnityEditor;
 
 [Serializable]
-public class DMKBulletEmitterMixinInterface: ScriptableObject {
-	public DMKBulletEmitterMixinInterface next = null;
-	public DMKBulletEmitter				  parentEmitter = null;
-
-	public virtual void DMKUpdateFrame(int currentFrame) {
-		if(next != null)
-			next.DMKUpdateFrame(currentFrame);
-	}
-	
-	public virtual void DMKShoot(int frame) {
-		if(next != null)
-			next.DMKShoot(frame);
-	}
-	
-	public virtual void DMKInit() {
-		if(next != null)
-			next.DMKInit();
-	}
-	
-	public virtual string DMKName() {
-		return "DMK Bullet Emitter";
-	}
-	
-	public virtual string DMKSummary() {
-		return "";
-	}
-};
-
-[Serializable]
 public class DMKBulletEmitter: ScriptableObject {
 
 	public DMKController parentController = null;
@@ -44,11 +15,11 @@ public class DMKBulletEmitter: ScriptableObject {
 	public string 		identifier;
 	public int 			simulationCount = 1;
 
-	public int emissionCooldown = 30;
-	public int emissionLength = 0;
-	public int interval = 0;
-	public int startFrame = 0;
-	public int overallLength = 0;
+	public DMKCurveProperty emissionCooldown = new DMKCurveProperty(30);
+	public int emissionLength 	= 0;
+	public int interval 		= 0;
+	public int startFrame 		= 0;
+	public int overallLength 	= 0;
 
 	public GameObject gameObject;
 
@@ -59,7 +30,7 @@ public class DMKBulletEmitter: ScriptableObject {
 	public DMKDeathBulletEmitter deathEmitter = null;
 
 	[SerializeField]
-	public DMKBulletEmitterMixinInterface emitter = null;
+	public DMKEmitterModifier emitterModifier = null;
 
 	public List<DMKBulletInfo> bullets;
 
@@ -115,7 +86,7 @@ public class DMKBulletEmitter: ScriptableObject {
 				_prevFrame = currentFrame;
 		} else {
 			if(this.emissionLength == 0 || currentFrame - _prevFrame < this.emissionLength) {
-				if(_currentCooldown != 0) {
+				if(_currentCooldown > 0) {
 					--_currentCooldown;
 				}
 				if(_currentCooldown == 0) {
@@ -125,7 +96,7 @@ public class DMKBulletEmitter: ScriptableObject {
 							_internalFrame += 1;
 					}
 					
-					_currentCooldown = this.emissionCooldown;
+					_currentCooldown = (int)Mathf.Clamp(this.emissionCooldown.Update((float)_currentFrame / 60f), 0, 9999);
 				}
 			} else {
 				_prevFrame = currentFrame;
@@ -139,18 +110,20 @@ public class DMKBulletEmitter: ScriptableObject {
 			deathEmitter.DMKUpdateFrame(currentFrame);
 	}
 
-	public virtual void DMKShoot(int frame) {
-
-	}
-
 	public virtual void DMKInit() {
 		_currentCooldown = _currentFrame = _currentInterval = _prevFrame = _internalFrame = 0;
 		if(deathEmitter != null)
 			deathEmitter.DMKInit();
+		if(emitterModifier != null)
+			emitterModifier.DMKInit();
+	}
+
+	public virtual void DMKShoot(int frame) {
+
 	}
 
 	public virtual string DMKName() {
-		return "DMK Emitter";
+		return "DMKBulletEmitter";
 	}
 
 	public virtual string DMKSummary() {
@@ -165,6 +138,7 @@ public class DMKBulletEmitter: ScriptableObject {
 		this.bulletContainer 	= emitter.bulletContainer;
 		this.gameObject 		= emitter.gameObject;
 		this.tag 				= emitter.tag;
+
 		if(emitter.deathEmitter != null) {
 			this.deathEmitter = (DMKDeathBulletEmitter)ScriptableObject.CreateInstance(emitter.deathEmitter.GetType());
 			this.deathEmitter.CopyFrom(emitter.deathEmitter);
@@ -172,17 +146,23 @@ public class DMKBulletEmitter: ScriptableObject {
 		else
 			this.deathEmitter = null;
 
+		if(emitter.emitterModifier != null) {
+			this.emitterModifier = (DMKEmitterModifier)ScriptableObject.CreateInstance(emitter.emitterModifier.GetType());
+			this.emitterModifier.CopyFrom(emitter.emitterModifier);
+		}
+		else
+			this.emitterModifier = null;
+
 		this.bulletInfo.CopyFrom(emitter.bulletInfo);
 	}
 
-	DMKBulletInfo _CreateBullet(Vector3 position, float direction) {
+	public DMKBulletInfo CreateBullet(Vector3 position, float direction, float speedMultiplier) {
 		if(parentController.CanAddBullet()) {
 			GameObject bulletObj = new GameObject();
 			DMKBulletInfo bullet = bulletObj.AddComponent<DMKBulletInfo>();
 
-			bullet.bulletInfo.CopyFrom(this.bulletInfo);
+			bullet.bulletInfo.CopyFrom(this.bulletInfo, speedMultiplier);
 			bullet.bulletInfo.direction = direction * Mathf.Deg2Rad;
-			bullet.bulletInfo.lifeFrame = 0;
 
 			SpriteRenderer renderer = bulletObj.AddComponent<SpriteRenderer>();
 			renderer.sprite = this.bulletInfo.bulletSprite;
@@ -211,17 +191,52 @@ public class DMKBulletEmitter: ScriptableObject {
 		}
 		return null;
 	}
-	
-	public DMKBulletInfo ShootBullet(Vector3 position, float direction) {
-		return this._CreateBullet(position, direction);
+
+	public void ShootBullet(Vector3 position, float direction, float speedMultiplier = 1f) {
+		if(emitterModifier != null) {
+			emitterModifier.OnShootBullet(position, direction, speedMultiplier);
+		} 
+		else
+			this.CreateBullet(position, direction, speedMultiplier);
 	}
 	
-	public DMKBulletInfo ShootBulletTo(Vector3 position, GameObject target) {
+	public void ShootBulletTo(Vector3 position, GameObject target, float speedMultiplier = 1f) {
 		Vector3 targetPos = target.transform.position;
 		Vector3 dis = targetPos - position ;
 		float angle = (float)(Math.Atan2(dis.y, dis.x) * Mathf.Rad2Deg);
-		return this._CreateBullet(position, angle);
+		this.ShootBullet(position, angle, speedMultiplier);
 	}
+
+	public void AddModifier(DMKEmitterModifier modifier) {
+		DMKEmitterModifier m = this.emitterModifier;
+		if(m == null)
+			this.emitterModifier = modifier;
+		else {
+			while(m.next != null)
+				m = m.next;
+			m.next = modifier;
+		}
+		modifier.parentEmitter = this;
+	}
+
+	public void RemoveModifier(DMKEmitterModifier modifier) {
+		DMKEmitterModifier m = this.emitterModifier;
+		DMKEmitterModifier p = null;
+		while(m != null) {
+			if(m == modifier) {
+				if(p == null) {
+					this.emitterModifier = m.next;
+				}
+				else {
+					p.next = m.next;
+				}
+				break;
+			}
+			p = m;
+			m = m.next;
+		}
+	}
+
 
 #region editor
 	
@@ -229,7 +244,7 @@ public class DMKBulletEmitter: ScriptableObject {
 	public bool editorEnabled = true;
 	public bool editorBulletInfoExpanded = true;
 	public bool editorEmitterInfoExpanded = true;
-	public int  editorDeathSubEmitterIndex = -1;
+	public bool editorModifierExpanded = true;
 	
 	public virtual void OnEditorGUI() {
 	}

@@ -22,12 +22,22 @@ public class DMKCurveProperty {
 			value = curve.Evaluate(t);
 		return value;
 	}
-	
-	public static DMKCurveProperty CopyFrom(DMKCurveProperty p) {
+
+	public static DMKCurveProperty Copy(DMKCurveProperty p) {
 		DMKCurveProperty n = new DMKCurveProperty();
-		n.value 		= p.value;
-		n.useCurve 		= p.useCurve;
-		n.curve 		= p.curve;
+		n.value		= p.value;
+		n.useCurve	= p.useCurve;
+		n.curve		= p.curve;
+		return n;
+	}
+
+	public static DMKCurveProperty Copy(DMKCurveProperty p, float x) {
+		DMKCurveProperty n = new DMKCurveProperty();
+		n.value = p.value * x;
+		n.useCurve = p.useCurve;
+		n.curve = DMKUtil.CopyCurve(p.curve, v => {
+			return v * x;
+		});
 		return n;
 	}
 };

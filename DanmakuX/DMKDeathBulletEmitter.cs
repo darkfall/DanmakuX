@@ -50,7 +50,8 @@ public class DMKDeathBulletEmitter: DMKBulletEmitter {
 						parent.gameObject = null;
 						parent.objectOffset = this.objectOffset;
 						parent.DMKShoot(currentFrame);
-						currentCooldown = parent.emissionCooldown;
+					
+						currentCooldown = (int)Mathf.Clamp(parent.emissionCooldown.value, 0, 9999);
 					}
 				} else {
 					prevFrame = currentFrame;
@@ -72,6 +73,7 @@ public class DMKDeathBulletEmitter: DMKBulletEmitter {
 
 	public override void DMKUpdateFrame(int currentFrame) {
 		_currentFrame = currentFrame;
+		this.emissionCooldown.Update((float)currentFrame / 60f);
 
 		foreach(GameObjectInfo info in trackingObjects)
 			info.UpdateFrame(currentFrame);
@@ -84,13 +86,15 @@ public class DMKDeathBulletEmitter: DMKBulletEmitter {
 	// override DMKShoot and using objectOffset here
 
 	///
-
-	public override string DMKName() {
-		return "Death Emitter";
-	}
-	
-	public override string DMKSummary() {
-		return "";
+	public override void CopyFrom(DMKBulletEmitter emitter)
+	{
+		Type t = emitter.GetType();
+		if(t == typeof(DMKDeathBulletEmitter)) {
+			DMKDeathBulletEmitter de = emitter as DMKDeathBulletEmitter;
+			this.lifeFrame = de.lifeFrame;
+			this.objectOffset = de.objectOffset;
+		}
+		base.CopyFrom (emitter);
 	}
 
 	public override void OnEditorGUI() {

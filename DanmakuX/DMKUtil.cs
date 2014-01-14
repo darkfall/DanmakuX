@@ -18,6 +18,22 @@ class DMKUtil {
 		return curve;
 	}
 
+	public static AnimationCurve CopyCurve(AnimationCurve curve) {
+		AnimationCurve result = new AnimationCurve();
+		foreach(Keyframe key in curve.keys) {
+			result.AddKey(key);
+		}
+		return result;
+	}
+
+	public static AnimationCurve CopyCurve(AnimationCurve curve, Func<float, float> d) {
+		AnimationCurve result = new AnimationCurve();
+		foreach(Keyframe key in curve.keys) {
+			result.AddKey(new Keyframe(key.time, d(key.value)));
+		}
+		return result;
+	}
+
 	public static string[] ToStringArray(System.Collections.IList entries) {
 		System.Collections.Generic.List<string> strs = new System.Collections.Generic.List<string>();
 		foreach(object obj in entries)

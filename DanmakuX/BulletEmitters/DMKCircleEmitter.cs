@@ -53,8 +53,19 @@ public class DMKCircleEmitter: DMKBulletEmitter {
 		return String.Format("(Count = {0}, Radius = {1})", this.bulletCount, this.radius);
 	}
 
-	public override void CopyFrom (DMKBulletEmitter emitter)
+	public override void CopyFrom(DMKBulletEmitter emitter)
 	{
+		if(emitter.GetType() == typeof(DMKCircleEmitter)) {
+			DMKCircleEmitter cs = emitter as DMKCircleEmitter;
+			this.accel1 = cs.accel1;
+			this.accel2 = cs.accel2;
+			this.angleRange = cs.angleRange;
+			this.bulletCount = cs.bulletCount;
+			this.radius = cs.radius;
+			this.startAngle = cs.startAngle;
+			this.targetObject = cs.targetObject;
+			this.trackTarget = cs.trackTarget;
+		}
 		base.CopyFrom (emitter);
 	}
 
