@@ -13,7 +13,7 @@ public class DMKController: MonoBehaviour {
 	
 	public int maxBulletCount;
 	[SerializeField]
-	public List<DMKBulletInfo> bulletContainer = new List<DMKBulletInfo>();
+	public List<DMKBullet> bulletContainer = new List<DMKBullet>();
 
 	public bool paused = false;
 
@@ -87,7 +87,7 @@ public class DMKController: MonoBehaviour {
 		}
 		if(index == -1) {
 			try {
-				foreach(DMKBulletInfo bullet in this.bulletContainer) {
+				foreach(DMKBullet bullet in this.bulletContainer) {
 					DestroyImmediate(bullet.gameObject);
 				}
 			} catch {
@@ -105,9 +105,9 @@ public class DMKController: MonoBehaviour {
 		if(!paused && enabled && currentAttackIndex != -1) {
 			Rect cameraRect = DMKSettings.instance.GetCameraRect();
 		
-			List<DMKBulletInfo> diedBullets = new List<DMKBulletInfo>();
-			foreach(DMKBulletInfo bullet in this.bulletContainer) {
-				DMKBulletInfoInternal info = bullet.bulletInfo;
+			List<DMKBullet> diedBullets = new List<DMKBullet>();
+			foreach(DMKBullet bullet in this.bulletContainer) {
+				DMKBulletInfo info = bullet.bulletInfo;
 				if(!info.died) {
 					Vector3 prevPos = bullet.gameObject.transform.position;
 					float dist = info.speed.value * DMKSettings.instance.unitPerPixel;
@@ -139,8 +139,8 @@ public class DMKController: MonoBehaviour {
 						info.died = true;
 						diedBullets.Add(bullet);
 
-						if(bullet.parentEmitter.deathEmitter != null)
-							bullet.parentEmitter.deathEmitter.AddTrackObject(bullet.gameObject);
+						if(bullet.parentEmitter.deathController != null)
+							bullet.parentEmitter.deathController.AddTrackObject(bullet.gameObject);
 					}
 
 					info.lifeFrame++;
@@ -148,7 +148,7 @@ public class DMKController: MonoBehaviour {
 					diedBullets.Add(bullet);
 				}
 			}
-			foreach(DMKBulletInfo bullet in diedBullets) {
+			foreach(DMKBullet bullet in diedBullets) {
 				DestroyImmediate(bullet.gameObject);
 			}
 			this.bulletContainer.RemoveAll(

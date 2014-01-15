@@ -17,46 +17,54 @@ public class DMKDanmaku {
 	public DMKDanmakuPlayMode playMode = DMKDanmakuPlayMode.All;
 	public int 	  			  playInterval = 0;
 
+	public int currentFrame;
+
 	[SerializeField]
 	public DMKController parentController;
 	
 	[SerializeField]
-	public List<DMKBulletEmitter> emitters;
+	public List<DMKBulletShooterController> shooters;
 
-	public int currentFrame;
 
 	[SerializeField]
-	List<DMKBulletEmitter> _availableEmitters;
+	List<DMKBulletShooterController> _availableShooters;
+
 	[SerializeField]
-	DMKBulletEmitter	   _currentEmitter;
+	DMKBulletShooterController _currentEmitter;
+
 	[SerializeField]
-	int				 	   _currentEmitterIndex;
-	int 				   _currentInterval;
+	int _currentEmitterIndex;
+	int _currentInterval;
 	
 	public override string ToString() {
 		return name;
+	}
+
+	public void UpdateShooters() {
+		_availableShooters = this.shooters.FindAll(o => {
+			return o.editorEnabled;
+		});
 	}
 	
 	public void Play(DMKController controller) {
 		parentController = controller;
 		currentFrame = 0;
 
-		_availableEmitters = this.emitters.FindAll(o => {
-			return o.editorEnabled;
-		});
-		foreach(DMKBulletEmitter emitter in _availableEmitters) {
+		this.UpdateShooters();
+
+		foreach(DMKBulletShooterController emitter in _availableShooters) {
 			emitter.parentController = parentController;
 		}
 		
 		switch(playMode) {
 		case DMKDanmakuPlayMode.All:
-			foreach(DMKBulletEmitter emitter in _availableEmitters) {
+			foreach(DMKBulletShooterController emitter in _availableShooters) {
 				emitter.enabled = true;
 			}
 			break;
 			
 		case DMKDanmakuPlayMode.Randomized:
-			_currentEmitterIndex = UnityEngine.Random.Range(0, _availableEmitters.Count);
+			_currentEmitterIndex = UnityEngine.Random.Range(0, _availableShooters.Count);
 			break;
 			
 		case DMKDanmakuPlayMode.Sequence:
@@ -65,37 +73,38 @@ public class DMKDanmaku {
 		}
 		
 		if(playMode != DMKDanmakuPlayMode.All) {
-			_currentEmitter = _availableEmitters[_currentEmitterIndex];
+			_currentEmitter = _availableShooters[_currentEmitterIndex];
 			_currentEmitter.enabled = true;
 		}
 	}
 	
 	public void Stop() {
-		if(_availableEmitters != null)
-			foreach(DMKBulletEmitter emitter in _availableEmitters) {
+		if(_availableShooters != null)
+			foreach(DMKBulletShooterController emitter in _availableShooters) {
 				emitter.enabled = false;
 			}
 	}
 	
 	public void Update() {
 		if(playMode == DMKDanmakuPlayMode.All) {
-			foreach(DMKBulletEmitter emitter in _availableEmitters) {
+			foreach(DMKBulletShooterController emitter in _availableShooters) {
 				emitter.DMKUpdateFrame(currentFrame);
 			}
+			currentFrame += 1;
 		} else {
 			if(_currentInterval == 0) {
 				_currentEmitter.DMKUpdateFrame(currentFrame);
 				if(_currentEmitter.Ended) {
 					if(playMode == DMKDanmakuPlayMode.Randomized)
-						_currentEmitterIndex = UnityEngine.Random.Range(0, _availableEmitters.Count);
+						_currentEmitterIndex = UnityEngine.Random.Range(0, _availableShooters.Count);
 					else {
 						++_currentEmitterIndex;
-						if(_currentEmitterIndex >= _availableEmitters.Count)
+						if(_currentEmitterIndex >= _availableShooters.Count)
 							_currentEmitterIndex = 0;
 					}
 					_currentEmitter.enabled = false;
 					_currentInterval = playInterval;
-					_currentEmitter = _availableEmitters[_currentEmitterIndex];
+					_currentEmitter = _availableShooters[_currentEmitterIndex];
 					_currentEmitter.enabled = true;
 
 					currentFrame = 0;

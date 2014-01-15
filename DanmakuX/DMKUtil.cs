@@ -1,7 +1,10 @@
 using System;
 using UnityEngine;
+using UnityEditor;
+using UnityEditorInternal;
+using System.Reflection;
 
-class DMKUtil {
+public class DMKUtil {
 
 	public static float GetDgrBetweenObjects(GameObject obj1, GameObject obj2) {
 		Vector3 p1 = obj1.transform.position;
@@ -41,4 +44,11 @@ class DMKUtil {
 		return strs.ToArray();
 	}
 
+	// http://forum.unity3d.com/threads/219799-Sort-Layer-Renderer-Extension
+	public static string[] GetSortingLayerNames() {
+		Type internalEditorUtilityType = typeof(InternalEditorUtility);
+		PropertyInfo sortingLayersProperty = internalEditorUtilityType.GetProperty("sortingLayerNames", BindingFlags.Static | BindingFlags.NonPublic);
+		return (string[])sortingLayersProperty.GetValue(null, new object[0]);
+	}
+	
 }

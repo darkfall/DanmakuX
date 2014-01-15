@@ -73,4 +73,7 @@ public class DMKSettings: MonoBehaviour {
 		                orthoV * 2);
 	}
 
+	public int sortingLayerIndex = 0;
+	public int sortingOrder = 1;
+
 }

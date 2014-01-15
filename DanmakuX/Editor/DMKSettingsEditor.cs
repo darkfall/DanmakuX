@@ -23,6 +23,10 @@ public class DMKSettingsEditor: EditorWindow {
 
 		EditorGUILayout.HelpBox("Global max number of bullets. Can be changed in individual danmakus.", MessageType.None);
 		DMKSettings.instance.MaxNumBullets = EditorGUILayout.IntField("Max N-Bullets", DMKSettings.instance.MaxNumBullets);
+		EditorGUILayout.Space();
+
+		DMKSettings.instance.sortingLayerIndex = EditorGUILayout.Popup("Sorting Layer", DMKSettings.instance.sortingLayerIndex, DMKUtil.GetSortingLayerNames());
+		DMKSettings.instance.sortingOrder = EditorGUILayout.IntField("Sorting Order", DMKSettings.instance.sortingOrder);
 
 		EditorGUILayout.HelpBox("Orthographic Size and Offset are measured in units, see Pixel To Units to convert to pixels", MessageType.None);
 	
@@ -40,16 +44,18 @@ public class DMKSettingsEditor: EditorWindow {
 		}
 		DMKSettings.instance.useCustomOrthoSize = customOrthoSize;
 		if(DMKSettings.instance.useCustomOrthoSize) {
+			EditorGUI.BeginChangeCheck();
 			DMKSettings.instance.centerOffsetX = EditorGUILayout.FloatField("Center Offset X", DMKSettings.instance.centerOffsetX);
 			DMKSettings.instance.centerOffsetY = EditorGUILayout.FloatField("Center Offset Y", DMKSettings.instance.centerOffsetY);
 			DMKSettings.instance.orthoSizeHorizontal = EditorGUILayout.FloatField("Horizontal Ortho Size", DMKSettings.instance.orthoSizeHorizontal);
 			DMKSettings.instance.orthoSizeVertical = EditorGUILayout.FloatField("Vertical Ortho Size", DMKSettings.instance.orthoSizeVertical);
+			if(EditorGUI.EndChangeCheck()) {
+				SceneView.RepaintAll();
+			}
 		}
-		
+
 		GUI.skin.label.wordWrap = true;
 		GUILayout.EndVertical();
-
-		SceneView.RepaintAll();
 	}
 
 	public void OnGUI() {
