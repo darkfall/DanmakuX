@@ -28,9 +28,9 @@ class DMKDanmakuEditorX: EditorWindow {
 	DMKController selectedController;
 
 	DMKDanmaku	 			 	selectedDanmaku;
-	DMKBulletShooterController 	selectedShooter = null;
 	DMKBulletShooterController 	copiedShooter = null;
-	DMKShooterModifier			selectedModifier = null;
+
+	UnityEngine.Object selectedGraphObject = null;
 
 	Vector2 inspectorScrollPosition = new Vector2(0, 0);
 	Vector2 danmakuListScrollPosition = new Vector2(0, 0);
@@ -83,7 +83,7 @@ class DMKDanmakuEditorX: EditorWindow {
 			} else
 				selectedController = null;
 
-			selectedDanmaku = null;
+			selectedGraphObject = null;
 			if(selectedController != null && selectedController.danmakus.Count > 0) {
 				selectedDanmaku = selectedController.danmakus[0];
 			}
@@ -91,18 +91,8 @@ class DMKDanmakuEditorX: EditorWindow {
 			this.Repaint();
 		} catch {
 			selectedController = null;
-			selectedDanmaku = null;
+			selectedGraphObject = null;
 		}
-	}
-
-	string[] MakeDanmakuPopup() {
-		string[] danmakuNames = {};
-		foreach(DMKDanmaku danmaku in selectedController.danmakus) {
-			ArrayUtility.Add(ref danmakuNames, danmaku.name);
-		}
-		ArrayUtility.Add(ref danmakuNames, "----------");
-		ArrayUtility.Add(ref danmakuNames, "New Danmaku");
-		return danmakuNames;
 	}
 
 	void CreateNewDanmaku() {
@@ -146,10 +136,6 @@ class DMKDanmakuEditorX: EditorWindow {
 	}
 
 	void OnDanmakuListWindow(int id) {
-		GUILayout.BeginHorizontal();
-
-		GUILayout.EndHorizontal();
-
 		GUI.Label(new Rect(2, 0, 60, 16),
 		          "Danmakus");
 		if(GUI.Button(new Rect(DanmakuListWindowWidth - 20, 
@@ -209,7 +195,7 @@ class DMKDanmakuEditorX: EditorWindow {
 			if(GUI.GetNameOfFocusedControl() == "danmaku_" + i.ToString()) {
 				if(selectedDanmaku != danmaku) {
 					selectedDanmaku = danmaku;
-					selectedShooter = null;
+					selectedGraphObject = null;
 				}
 			}
 		}
@@ -231,8 +217,7 @@ class DMKDanmakuEditorX: EditorWindow {
 	void OnShooterWindow(int id) {
 		if ((Event.current.button == 0) && (Event.current.type == EventType.MouseDown)) {
 			GUI.FocusWindow(id);
-			selectedShooter = selectedDanmaku.shooters[id];
-			selectedModifier = null;
+			selectedGraphObject = selectedDanmaku.shooters[id];
 
 			Event.current.Use();
 		}
@@ -275,8 +260,7 @@ class DMKDanmakuEditorX: EditorWindow {
 	void OnShooterModifierWindow(int id) {
 		if ((Event.current.button == 0) && (Event.current.type == EventType.MouseDown)) {
 			GUI.FocusWindow(id);
-			selectedModifier = modifierDict[id];
-			selectedShooter = null;
+			selectedGraphObject = modifierDict[id];
 
 			Event.current.Use();
 		}
@@ -339,7 +323,7 @@ class DMKDanmakuEditorX: EditorWindow {
 				           windowRect, 
 				           OnShooterWindow, 
 				           "", 
-				           selectedShooter == shooter ? (GUIStyle)"flow node 0 on" : (GUIStyle)"flow node 0");
+				           selectedGraphObject == shooter ? (GUIStyle)"flow node 0 on" : (GUIStyle)"flow node 0");
 
 				DMKShooterModifier modifier = shooter.shooter.modifier;
 				int modifierIdx = 0;
@@ -355,7 +339,7 @@ class DMKDanmakuEditorX: EditorWindow {
 					           mr, 
 					           OnShooterModifierWindow, 
 					           "", 
-					           selectedModifier == modifier ? (GUIStyle)"flow node 1 on" : (GUIStyle)"flow node 1");
+					           selectedGraphObject == modifier ? (GUIStyle)"flow node 1 on" : (GUIStyle)"flow node 1");
 					modifierDict[id] = modifier;
 
 
@@ -384,8 +368,7 @@ class DMKDanmakuEditorX: EditorWindow {
 
 			if ((Event.current.button == 0) && (Event.current.type == EventType.mouseDown)) {
 				GUI.FocusWindow(-1);
-				selectedShooter = null;
-				selectedModifier = null;
+				selectedGraphObject = null;
 				this.Repaint();
 			}
 		}
@@ -417,16 +400,16 @@ class DMKDanmakuEditorX: EditorWindow {
 
 	void InspectorGUI() {
 
-		if(selectedShooter != null || selectedModifier != null) {
+		if(selectedGraphObject != null) {
 			GUILayout.BeginArea(new Rect(this.position.width - DMKDanmakuEditorX.InspectorWidth, 0, DMKDanmakuEditorX.InspectorWidth, this.position.height - ActionBarHeight));
 			
 			EditorGUILayout.BeginVertical("box");
 			inspectorScrollPosition = GUILayout.BeginScrollView(inspectorScrollPosition);
 
-			if(selectedShooter != null)
-				this.ShooterGUI(selectedShooter);
-			else if(selectedModifier != null)
-				selectedModifier.OnEditorGUI();
+			if(typeof(DMKBulletShooterController).IsAssignableFrom(selectedGraphObject.GetType()))
+				this.ShooterGUI(selectedGraphObject as DMKBulletShooterController);
+			else if(typeof(DMKShooterModifier).IsAssignableFrom(selectedGraphObject.GetType()))
+				(selectedGraphObject as DMKShooterModifier).OnEditorGUI();
 
 			GUILayout.EndScrollView();
 			EditorGUILayout.EndVertical();
@@ -651,7 +634,8 @@ class DMKDanmakuEditorX: EditorWindow {
 		string modifierTypeName = userData as string;
 		
 		DMKShooterModifier modifier = ScriptableObject.CreateInstance(modifierTypeName) as DMKShooterModifier;
-		selectedShooter.shooter.AddModifier(modifier);
+		// to do
+		//selectedShooter.shooter.AddModifier(modifier);
 	}
 	
 	void DisplayNewModifierMenu() {
@@ -674,24 +658,24 @@ class DMKDanmakuEditorX: EditorWindow {
 	#region shooter tools menu
 
 	void OnMenuCopyClicked() {
-		copiedShooter = selectedShooter;
+		copiedShooter = selectedGraphObject as DMKBulletShooterController;
 	}
 	
 	void OnMenuPasteClicked() {
 		if(copiedShooter != null &&
-		   copiedShooter != selectedShooter) {
-			selectedShooter.CopyFrom(copiedShooter);
+		   copiedShooter != selectedGraphObject) {
+			(selectedGraphObject as DMKBulletShooterController).CopyFrom(copiedShooter);
 		}
 	}
 	
 	void OnMenuRemoveClicked() {
 		if(EditorUtility.DisplayDialog("Remove Shooter", "Are you sure you want to remove this Shooter?", "Yes", "No")) {
-			if(selectedShooter != null)
-				selectedDanmaku.shooters.Remove(selectedShooter);
-			selectedShooter = null;
+			if(selectedGraphObject != null)
+				selectedDanmaku.shooters.Remove(selectedGraphObject as DMKBulletShooterController);
+			selectedGraphObject = null;
 		}
 	}
-	
+	/*
 	void OnAddDeathShooterClicked(object userData) {
 		string typeName = userData as String;
 		
@@ -711,13 +695,13 @@ class DMKDanmakuEditorX: EditorWindow {
 	void OnRemoveDeathShooterClicked() {
 		selectedShooter.deathController = null;
 	}
-	
+	*/
 	void DisplayShooterToolsMenu() {
 		GenericMenu menu = new GenericMenu();
 		
 		menu.AddItem(new GUIContent("Copy"), false, OnMenuCopyClicked);
 		if(copiedShooter != null &&
-		   copiedShooter != selectedShooter)
+		   copiedShooter != selectedGraphObject)
 			menu.AddItem(new GUIContent("Paste"), false, OnMenuPasteClicked);
 		else
 			menu.AddDisabledItem(new GUIContent("Paste"));
