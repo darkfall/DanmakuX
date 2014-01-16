@@ -16,7 +16,7 @@ public class DMKNWayShooter: DMKBulletShooter {
 	float _currentAngle;
 
 	public override string DMKName() {
-		return "NWay Emitter";
+		return "N-Way Shooter";
 	}
 	
 	public override string DMKSummary() {

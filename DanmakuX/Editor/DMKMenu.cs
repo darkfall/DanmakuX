@@ -7,6 +7,11 @@ class DMKMenu {
 	static void OpenAttackStyleEditor() {
 		DMKDanmakuEditor.Create();
 	}
+
+	[MenuItem("DanmakuX/Danmaku EditorX", false, 1)]
+	static void OpenAttackStyleEditorX() {
+		DMKDanmakuEditorX.Create();
+	}
 	
 	[MenuItem("DanmakuX/Settings", false, 13)]
 	static void OpenSettingsEditor() {

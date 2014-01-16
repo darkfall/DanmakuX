@@ -17,6 +17,10 @@ public class DMKController: MonoBehaviour {
 
 	public bool paused = false;
 
+	public bool playing {
+		get { return currentAttackIndex != -1 && !paused; }
+	}
+
 	// that's for STG!
 	// we want a 60fps update because every value in DMK is related to frame
 	double _prevTime;

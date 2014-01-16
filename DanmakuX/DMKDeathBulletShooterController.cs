@@ -87,6 +87,7 @@ public class DMKDeathBulletShooterController: DMKBulletShooterController {
 		this.shooter.OnShoot(frame);
 	}
 
+
 	// override DMKShoot and using objectOffset here
 
 	///

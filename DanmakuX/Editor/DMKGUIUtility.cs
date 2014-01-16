@@ -26,6 +26,7 @@ public class DMKGUIUtility {
 			
 			boxNoBackground = new GUIStyle(GUI.skin.box);
 			boxNoBackground.normal.background = boxNoBackground.focused.background = boxNoBackground.active.background = null;
+
 		}
 		Initialized = true;
 	}
@@ -101,5 +102,6 @@ public class DMKGUIUtility {
 		Handles.DrawLine(new Vector3(r.x + r.width, r.y, z) ,
 		                 new Vector3(r.x, r.y, z));
 	}
+
 
 };

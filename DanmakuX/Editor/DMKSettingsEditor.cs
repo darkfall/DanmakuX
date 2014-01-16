@@ -5,7 +5,7 @@ using System;
 public class DMKSettingsEditor: EditorWindow {
 
 	public static void Create() {
-		DMKSettingsEditor editor = (DMKSettingsEditor)EditorWindow.GetWindow<DMKSettingsEditor>("DanmakuX Settings", true);
+		EditorWindow.GetWindow<DMKSettingsEditor>("DanmakuX Settings", true);
 	}
 
 	public static void SettingsGUI() {

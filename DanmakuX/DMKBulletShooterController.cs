@@ -200,6 +200,7 @@ public class DMKBulletShooterController: ScriptableObject {
 	public bool editorBulletInfoExpanded = true;
 	public bool editorShooterInfoExpanded = true;
 	public bool editorModifierExpanded = true;
+	public Rect editorWindowRect = new Rect(100, 100, 120, 40);
 	
 	public void OnEditorGUI ()
 	{

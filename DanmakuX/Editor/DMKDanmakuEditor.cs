@@ -18,7 +18,6 @@ class DMKDanmakuEditor: EditorWindow {
 	// used to display names
 	public List<string> danmakuNames;
 
-	public int 		 	shooterIdx;
 	Vector2			 	shooterScrollPosition;
 
 	public static void Create() {
@@ -34,6 +33,17 @@ class DMKDanmakuEditor: EditorWindow {
 	}
 
 	public void OnFocus() {
+	}
+	
+	void OnGUI() {
+		EditorGUIUtility.labelWidth = 100;
+		if(selectedController != null) {
+			this.LeftPanelGUI();
+			this.RightPanelGUI(); 
+			
+		} else {
+			this.UnavailableGUI();
+		}
 	}
 
 	public void OnSelectionChange() {
@@ -353,8 +363,6 @@ class DMKDanmakuEditor: EditorWindow {
 						this.ShooterGUI(shooter);
 						EditorGUILayout.EndVertical();
 
-						Rect r = GUILayoutUtility.GetLastRect();
-
 						EditorGUILayout.BeginVertical("box");
 						shooter.deathController.editorExpanded = EditorGUILayout.Foldout(shooter.deathController.editorExpanded, "Death Shooter");
 						if(shooter.deathController.editorExpanded)
@@ -619,15 +627,5 @@ class DMKDanmakuEditor: EditorWindow {
 		GUILayout.EndHorizontal();
 	}
 
-	void OnGUI() {
-		EditorGUIUtility.labelWidth = 100;
-		if(selectedController != null) {
-			this.LeftPanelGUI();
-			this.RightPanelGUI(); 
-
-		} else {
-			this.UnavailableGUI();
-		}
-	}
 
 };

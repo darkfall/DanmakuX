@@ -33,12 +33,17 @@ public class DMKShooterModifier: ScriptableObject {
 		
 	}
 
-	
 	public void DoShootBullet(Vector3 pos, float direction, float speedMultiplier) {
 		if(next != null)
 			next.OnShootBullet(pos, direction, speedMultiplier);
 		else
 			parentShooter.CreateBullet(pos, direction, speedMultiplier);
 	}
+
+	#region editor
+
+	public Rect editorWindowRect;
+
+	#endregion
 
 };
