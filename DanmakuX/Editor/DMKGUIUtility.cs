@@ -10,6 +10,7 @@ public class DMKGUIUtility {
 	public static GUIStyle listEntryNormal;
 	public static GUIStyle listEntryFocused;
 	public static GUIStyle boxNoBackground;
+	public static GUIStyle horizontalLine;
 
 	public static bool Initialized = false;
 
@@ -27,6 +28,11 @@ public class DMKGUIUtility {
 			boxNoBackground = new GUIStyle(GUI.skin.box);
 			boxNoBackground.normal.background = boxNoBackground.focused.background = boxNoBackground.active.background = null;
 
+			horizontalLine = new GUIStyle("box");
+			horizontalLine.border.top = horizontalLine.border.bottom = 1;
+			horizontalLine.margin.top = horizontalLine.margin.bottom = 1;
+			horizontalLine.padding.top = horizontalLine.padding.bottom = 1;
+			
 		}
 		Initialized = true;
 	}
@@ -103,5 +109,21 @@ public class DMKGUIUtility {
 		                 new Vector3(r.x, r.y, z));
 	}
 
+	public static void DrawTextureWithTexCoordsAndColor(Rect dst, Texture tex, Rect coords, Color c) {
+		Color gc = GUI.color;
+		GUI.color = c;
+		GUI.DrawTextureWithTexCoords(dst, 
+		                             tex, 
+		                             coords,
+		                             true);
+		GUI.color = gc;
+	}
+
+	public static void DrawTextureAt(Texture tex, Rect dst, Color c) {
+		Color gc = GUI.color;
+		GUI.color = c;
+		GUI.DrawTexture(dst, tex, ScaleMode.ScaleToFit, true);
+		GUI.color = gc;
+	}
 
 };

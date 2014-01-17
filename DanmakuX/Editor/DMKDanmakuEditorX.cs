@@ -6,29 +6,31 @@ using System.Collections;
 using System.Collections.Generic;
 
 class DMKDanmakuEditorX: EditorWindow {
-	
-	public static int PreviewTextureWidth = 48;
-	public static int PreviewTextureHeight = 48;
 
 	public static int LeftPaneWidth = 154;
-	public static int InspectorWidth = 300;
-	public static int ActionBarHeight = 24;
+	public static int InspectorWidth = 260;
+
+	public static int ActionBarWidth = 60;
+	public static int ActionBarHeight = 26;
 	
 	public static int DanmakuListWindowId = 999;
 	public static int DanmakuListWindowWidth = 240;
 	public static int DanmakuListWindowHeight = 120;
 
-	public static int ShooterGraphWindowWidth = 120;
+	public static int ShooterGraphWindowWidth = 100;
+	public static int ShooterGraphWindowHeight = 52;
 	public static int ShooterModifierGraphWindowWidth = 100;
-	public static int ShooterGraphWindowHeight = 40;
 	public static int ShooterModifierGraphWindowHeight = 32;
 
 	public static int ShooterModifierWindowIdStartIndex = 100;
 	
 	DMKController selectedController;
 
-	DMKDanmaku	 			 	selectedDanmaku;
+	[SerializeField]
+	DMKDanmaku selectedDanmaku;
+
 	DMKBulletShooterController 	copiedShooter = null;
+	DMKShooterModifier			copiedModifier = null;
 
 	UnityEngine.Object selectedGraphObject = null;
 
@@ -36,7 +38,10 @@ class DMKDanmakuEditorX: EditorWindow {
 	Vector2 danmakuListScrollPosition = new Vector2(0, 0);
 	Vector2 shooterGraphScrollPosition = new Vector2(0, 0);
 
-	Dictionary<int, DMKShooterModifier> modifierDict = new Dictionary<int, DMKShooterModifier>();
+	bool creatingLink = false;
+	Type linkSourceType;
+	Type linkTargetType;
+	Rect linkStartPos;
 	
 	public static void Create() {
 		DMKDanmakuEditorX editor = (DMKDanmakuEditorX)EditorWindow.GetWindow<DMKDanmakuEditorX>("DanmakuX", true);
@@ -49,6 +54,10 @@ class DMKDanmakuEditorX: EditorWindow {
 	}
 	
 	public void OnFocus() {
+		if(selectedController != null &&
+		   selectedController.danmakus.IndexOf(selectedDanmaku) == -1)
+			selectedDanmaku = null;
+		this.Repaint();
 	}
 
 	void UnavailableGUI() {
@@ -61,9 +70,9 @@ class DMKDanmakuEditorX: EditorWindow {
 		EditorGUIUtility.labelWidth = 100;
 		if(selectedController != null) {
 			this.BeginWindows();
+			this.ShooterGraphGUI();
 			this.DanmakuListGUI();
 			this.ActionBarGUI();
-			this.ShooterGraphGUI();
 			this.InspectorGUI();
 			this.EndWindows();
 		} else {
@@ -107,14 +116,40 @@ class DMKDanmakuEditorX: EditorWindow {
 	}
 
 	void ActionBarGUI() {
-		GUILayout.BeginArea(new Rect(0, this.position.height - ActionBarHeight, this.position.width, ActionBarHeight), GUI.skin.box);
+		GUILayout.BeginArea(new Rect((this.position.width - ActionBarWidth - InspectorWidth) / 2, 
+		                             this.position.height - ActionBarHeight - 16, 
+		                             ActionBarWidth, 
+		                             ActionBarHeight), 
+		                    (GUIStyle)"box");
 		GUILayout.BeginHorizontal();
 		{
-			if(GUILayout.Button("New Shooter", GUILayout.Width(100))) {
-				this.DisplayNewShooterMenu();
+			if(selectedController.currentAttackIndex != -1) {
+				if(GUILayout.Button(EditorGUIUtility.FindTexture( "d_PlayButton On" ),
+				                    "label",
+									GUILayout.Width(24))) {
+					selectedController.StartDanmaku(-1);
+					selectedController.paused = false;
+				}
+			} else {
+				if(GUILayout.Button(EditorGUIUtility.FindTexture( "d_PlayButton" ),
+				                    "label",
+				                    GUILayout.Width(24))) {
+					selectedController.StartDanmaku(selectedDanmaku);
+				}
 			}
-			if(GUILayout.Button("New Modifier", GUILayout.Width(100))) {
 
+			if(selectedController.paused) {
+				if(GUILayout.Button(EditorGUIUtility.FindTexture( "d_PauseButton on" ),
+				                    "label",
+				                    GUILayout.Width(24))) {
+					selectedController.paused = false;
+				}
+			} else {
+				if(GUILayout.Button(EditorGUIUtility.FindTexture( "d_PauseButton" ),
+				                    "label",
+				                    GUILayout.Width(24))) {
+					selectedController.paused = true;
+				}
 			}
 		}
 		GUILayout.EndHorizontal();
@@ -135,7 +170,7 @@ class DMKDanmakuEditorX: EditorWindow {
 		}
 	}
 
-	void OnDanmakuListWindow(int id) {
+	void OnDanmakuListWindow() {
 		GUI.Label(new Rect(2, 0, 60, 16),
 		          "Danmakus");
 		if(GUI.Button(new Rect(DanmakuListWindowWidth - 20, 
@@ -207,65 +242,73 @@ class DMKDanmakuEditorX: EditorWindow {
 		GUIStyle s = new GUIStyle(GUI.skin.window);
 		s.onNormal.background = s.normal.background;
 	
-		GUI.Window(DanmakuListWindowId, 
-		           new Rect(0, 0, DanmakuListWindowWidth, DanmakuListWindowHeight), 
-		           OnDanmakuListWindow, 
-		           "",
-		           s);
+		GUILayout.BeginArea(new Rect(0, 0, DanmakuListWindowWidth, DanmakuListWindowHeight), s);
+		this.OnDanmakuListWindow();
+
+		GUILayout.EndArea();
 	}
 
-	void OnShooterWindow(int id) {
-		if ((Event.current.button == 0) && (Event.current.type == EventType.MouseDown)) {
-			GUI.FocusWindow(id);
-			selectedGraphObject = selectedDanmaku.shooters[id];
+	void OnShooterWindow(DMKBulletShooterController shooter) {
+		if ((Event.current.button == 0 || Event.current.button == 1)) {
+			if(Event.current.type == EventType.MouseDown) {
+				selectedGraphObject = shooter;
+				Event.current.Use();
 
-			Event.current.Use();
+			} else if(Event.current.type == EventType.MouseUp) {
+				if(Event.current.button == 1)
+					this.DisplayShooterToolsMenu();
+				Event.current.Use();
+			}
 		}
 
-		DMKBulletShooterController shooter = selectedDanmaku.shooters[id];
-		GUI.Label(new Rect(2, 0, ShooterGraphWindowWidth - 30, 16), shooter.DMKName());
-
-		if(GUI.Button(new Rect(ShooterGraphWindowWidth - 18, 0, 16, 16), 
-		              Resources.LoadAssetAtPath<Texture2D>("Assets/Scripts/DanmakuX/Editor/Resources/Icons/Settings.png"), 
-		              GUI.skin.label)) {
-			this.DisplayShooterToolsMenu();
-		}
+		GUI.Label(new Rect(2, 0, ShooterGraphWindowWidth, 16), shooter.DMKName());
 
 		Sprite sprite = shooter.bulletInfo.bulletSprite;
 		if(sprite != null) {
 			Texture2D tex = sprite.texture;
 			if(tex != null) {
-				Rect sr = new Rect(Mathf.Clamp((ShooterGraphWindowWidth - sprite.rect.width)/2, 0, ShooterGraphWindowWidth/2),
-				                   16 + Mathf.Clamp((ShooterGraphWindowHeight - 16 - sprite.rect.height)/2, 0, ShooterGraphWindowHeight/2),
-				                   sprite.rect.width,
-				                   sprite.rect.height);
-				
-				Rect texR = new Rect((float)sprite.rect.x / tex.width,
-				                     (float)sprite.rect.y / tex.height,
-				                     (float)sprite.rect.width / tex.width,
-				                     (float)sprite.rect.height / tex.height);
-				Color c = GUI.color;
-				GUI.color = shooter.bulletInfo.bulletColor;
-				GUI.DrawTextureWithTexCoords(sr, 
-				                             tex, 
-				                             texR,
-				                             true);
-				GUI.color = c;
+				int width = (int)(Mathf.Clamp(sprite.rect.width, 0, ShooterGraphWindowHeight - 16));
+				int height = (int)(Mathf.Clamp(sprite.rect.height, 0, ShooterGraphWindowHeight - 16));
+				DMKGUIUtility.DrawTextureWithTexCoordsAndColor(new Rect(Mathf.Clamp((ShooterGraphWindowWidth - width)/2, 0, ShooterGraphWindowWidth/2),
+				                                                        16 + Mathf.Clamp((ShooterGraphWindowHeight - 16 - height)/2, 0, ShooterGraphWindowHeight/2),
+				                                                        width,
+				                                                        height),
+				                                               tex,
+				                                               new Rect((float)sprite.rect.x / tex.width,
+				         												(float)sprite.rect.y / tex.height,
+				         												(float)sprite.rect.width / tex.width,
+				         												(float)sprite.rect.height / tex.height),
+				                                               shooter.bulletInfo.bulletColor);
 			}
 		}
-	
-		GUI.DragWindow();
 	}
 
-	void OnShooterModifierWindow(int id) {
-		if ((Event.current.button == 0) && (Event.current.type == EventType.MouseDown)) {
-			GUI.FocusWindow(id);
-			selectedGraphObject = modifierDict[id];
+	void OnShooterModifierWindow(DMKShooterModifier modifier) {
+		if ((Event.current.button == 0 || Event.current.button == 1)) {
+			if(Event.current.type == EventType.MouseDown) {
+				if(!creatingLink)
+					selectedGraphObject = modifier;
+				Event.current.Use();
+			} else if(Event.current.type == EventType.MouseUp) {
+				if(Event.current.button == 0 && creatingLink) {
+					if(linkSourceType == typeof(DMKBulletShooterController))
+						(selectedGraphObject as DMKBulletShooterController).shooter.modifier = modifier;
+					else if(linkSourceType == typeof(DMKShooterModifier) &&
+					        !HasModifierLoop(modifier, selectedGraphObject as DMKShooterModifier)) { 
+						(selectedGraphObject as DMKShooterModifier).next = modifier;
+					}
+					creatingLink = false;
+				} else if(Event.current.button == 1) {
+					if(creatingLink)
+						creatingLink = false;
+					else
+						this.DisplayModifierToolsMenu();
+				}
+				Event.current.Use();
+			}
 
-			Event.current.Use();
 		}
 
-		DMKShooterModifier modifier = modifierDict[id];
 		GUIStyle s = new GUIStyle(GUI.skin.label);
 		s.fontSize = 12;
 		s.normal.textColor = new Color(255, 255, 255, 1);
@@ -273,7 +316,6 @@ class DMKDanmakuEditorX: EditorWindow {
 		GUI.Label(new Rect(0, 0, ShooterModifierGraphWindowWidth, ShooterModifierGraphWindowHeight),
 		          modifier.DMKName(),
 		          s);
-
 	}
 
 	Rect ClampEditorWindowRect(Rect r) {
@@ -289,145 +331,203 @@ class DMKDanmakuEditorX: EditorWindow {
 		return r;
 	}
 
+	bool HasModifierLoop(DMKShooterModifier src, DMKShooterModifier target) {
+		DMKShooterModifier m = src.next;
+		while(m != null) {
+			if(m == target)
+				return true;
+			m = m.next;
+		}
+		return false;
+	}
+
+	void DrawVerticalBezier(Vector3 start, Vector3 end, bool drawArrow) {
+		float tangentOff = (end.y - start.y) / 2;
+		if(end.y < start.y) {
+			//tangentOff = -tangentOff;
+			if(drawArrow)
+				end.y += 8;
+		} else {
+			if(drawArrow)
+				end.y -= 8;
+		}
+		Handles.DrawBezier(start,
+		                   end ,
+		                   start + Vector3.up * tangentOff,
+		                   end - Vector3.up * tangentOff,
+		                   Color.yellow,
+		                   null,
+		                   3);
+		if(drawArrow) {
+			if(end.y > start.y)
+				DMKGUIUtility.DrawTextureAt(Resources.LoadAssetAtPath<Texture2D>("Assets/Scripts/DanmakuX/Editor/Resources/Icons/arrow_down.png"),
+			                            	new Rect(end.x - 10, 
+			         								 end.y - 8,
+		    	     								 20, 20),
+			    	                        Color.yellow);
+			else 
+				DMKGUIUtility.DrawTextureAt(Resources.LoadAssetAtPath<Texture2D>("Assets/Scripts/DanmakuX/Editor/Resources/Icons/arrow_up.png"),
+				                            new Rect(end.x - 10, 
+				         							 end.y - 12,
+				         							 20, 20),
+				                            Color.yellow);
+		}
+	}
+
 	void ShooterGraphGUI() {
-		GUILayout.BeginArea(new Rect(0, 0, this.position.width - InspectorWidth, this.position.height - ActionBarHeight));
 
 		if(selectedController.danmakus.Count == 0) {
-			EditorGUILayout.HelpBox("No Danmakus Available", MessageType.Info);
-			GUILayout.EndArea();
 			return;
 		}
 
 		if(selectedDanmaku != null) {
-			Rect windowRect = new Rect(0, 0, ShooterGraphWindowWidth, ShooterGraphWindowHeight);
-			int heightRequired = selectedDanmaku.shooters.Count * (ShooterGraphWindowHeight + 40) - 40;
+			Rect graphWindowRect = new Rect(0, 0, this.position.width - InspectorWidth, this.position.height);
+			Rect nodeWindowRect = new Rect(0, 0, ShooterGraphWindowWidth, ShooterGraphWindowHeight);
+			int widthRequired = selectedDanmaku.shooters.Count * (ShooterGraphWindowWidth + 40) - 40;
 
-			// to do, scroll width required?
-			shooterGraphScrollPosition =  GUI.BeginScrollView(new Rect(0, DanmakuListWindowHeight, this.position.width - InspectorWidth, this.position.height - DanmakuListWindowHeight),
+			// to do, scroll height required?
+			shooterGraphScrollPosition =  GUI.BeginScrollView(graphWindowRect,
 			                    							  shooterGraphScrollPosition,
-			                                                  new Rect(0, 0, this.position.width - InspectorWidth, heightRequired));
+			                                                  new Rect(0, 0, widthRequired + 40, this.position.height - 24));
+			GUI.Box(new Rect(shooterGraphScrollPosition.x, 
+			                 shooterGraphScrollPosition.y, 
+			                 this.position.width - InspectorWidth, 
+			                 this.position.height),
+			        "",
+			        (GUIStyle)"flow background");
+		//	shooterGraphScrollPosition =  GUILayout.BeginScrollView(shooterGraphScrollPosition, (GUIStyle)"flow background");
 
 			int center = (int) (this.position.height - DanmakuListWindowHeight) / 2;
-			windowRect.y = center - (heightRequired - (ShooterGraphWindowHeight + 40)) / 2;
-			windowRect.x = 40;
+			nodeWindowRect.y = 40 + DanmakuListWindowHeight;
+			nodeWindowRect.x = Mathf.Clamp((this.position.width - InspectorWidth) / 2 - widthRequired / 2, 20, 9999);
 
 			for(int i=0; i<selectedDanmaku.shooters.Count; ++i) {
 				DMKBulletShooterController shooter = selectedDanmaku.shooters[i];
-				/*
-				shooter.editorWindowRect = ClampEditorWindowRect(GUI.Window(i, 
-					                                                        shooter.editorWindowRect, OnShooterWindow, 
-				                                                            "", 
-				                                                            selectedShooter == shooter ? (GUIStyle)"flow node 0 on" : (GUIStyle)"flow node 0"));
-				*/
-				GUI.Window(i, 
-				           windowRect, 
-				           OnShooterWindow, 
-				           "", 
-				           selectedGraphObject == shooter ? (GUIStyle)"flow node 0 on" : (GUIStyle)"flow node 0");
 
-				DMKShooterModifier modifier = shooter.shooter.modifier;
-				int modifierIdx = 0;
-				while(modifier != null) {
-					Rect mr = new Rect(windowRect.x + ShooterGraphWindowWidth + 80,
-					                   windowRect.y,
-					                   ShooterModifierGraphWindowWidth,
-					                   ShooterModifierGraphWindowHeight);
-					mr.y += (ShooterGraphWindowHeight - ShooterModifierGraphWindowHeight) / 2;
+				GUILayout.BeginArea(nodeWindowRect, selectedGraphObject == shooter ? (GUIStyle)"flow node 0 on" : (GUIStyle)"flow node 0");
+				this.OnShooterWindow(shooter);
+				GUILayout.EndArea();
 
-					int id = i * 10 + ShooterModifierWindowIdStartIndex + modifierIdx;
-					GUI.Window(id, 
-					           mr, 
-					           OnShooterModifierWindow, 
-					           "", 
-					           selectedGraphObject == modifier ? (GUIStyle)"flow node 1 on" : (GUIStyle)"flow node 1");
-					modifierDict[id] = modifier;
+				shooter.editorWindowRect = nodeWindowRect;
 
+				if(shooter.shooter.modifier != null) {
+					DMKShooterModifier modifier = shooter.shooter.modifier;
+					this.DrawVerticalBezier(new Vector3(nodeWindowRect.x + nodeWindowRect.width / 2,
+					                            		nodeWindowRect.y + nodeWindowRect.height),
+					                		new Vector3(modifier.editorWindowRect.x + modifier.editorWindowRect.width / 2,
+					            						modifier.editorWindowRect.y),
+					                		true);
+				}
+				nodeWindowRect.x += (ShooterGraphWindowWidth + 40);
+			}
 
-					Vector3 start = new Vector3(windowRect.x + windowRect.width,
-					                            windowRect.y + windowRect.height / 2 - DanmakuListWindowHeight);
-					Vector3 end = new Vector3(mr.x,
-					                          mr.y + mr.height / 2 - DanmakuListWindowHeight);
-					
-					Handles.DrawBezier(start,
-					                   end ,
-					                   start + Vector3.right * 20,
-					                   end - Vector3.right * 20,
-					                   Color.yellow,
-					                   null,
-					                   3);
-
-					mr.x += (ShooterModifierGraphWindowWidth + 80);
-					modifier = modifier.next;
-					modifierIdx += 1;
+			nodeWindowRect = new Rect((this.position.width - InspectorWidth) / 2 - ShooterModifierGraphWindowWidth/2,
+			                      		40 + ShooterGraphWindowHeight + 52 + DanmakuListWindowHeight,
+			                   			ShooterModifierGraphWindowWidth,
+			                   			ShooterModifierGraphWindowHeight);
+			
+			foreach(DMKShooterModifier modifier in selectedDanmaku.modifiers) {
+				GUIStyle modifierStyle = (GUIStyle)"flow node 1";
+				if(selectedGraphObject == modifier ||
+				   (creatingLink && 
+				 	linkTargetType == typeof(DMKShooterModifier) &&
+				 	nodeWindowRect.Contains(Event.current.mousePosition) &&
+				 	!HasModifierLoop(modifier, selectedGraphObject as DMKShooterModifier))) {
+					modifierStyle = (GUIStyle)"flow node 1 on";
 				}
 
-				windowRect.y += (ShooterGraphWindowHeight + 40);
+				GUILayout.BeginArea(nodeWindowRect, modifierStyle);
+				this.OnShooterModifierWindow(modifier);
+				GUILayout.EndArea();
+				
+				if(modifier.next != null) {
+					DMKShooterModifier next = modifier.next;
+					if(next.editorWindowRect.y > modifier.editorWindowRect.y)
+						this.DrawVerticalBezier(new Vector3(nodeWindowRect.x + nodeWindowRect.width / 2, 
+						                            		nodeWindowRect.y + nodeWindowRect.height),
+						                        new Vector3(next.editorWindowRect.x + next.editorWindowRect.width / 2,
+						            						next.editorWindowRect.y),
+						                		true);
+					else {
+						this.DrawVerticalBezier(new Vector3(nodeWindowRect.x + nodeWindowRect.width / 2, 
+						                                    nodeWindowRect.y),
+						                        new Vector3(next.editorWindowRect.x + next.editorWindowRect.width / 2,
+						            						next.editorWindowRect.y + next.editorWindowRect.height),
+						                        true);
+					}
+				}
+				modifier.editorWindowRect = nodeWindowRect;
+
+				nodeWindowRect.y += ShooterModifierGraphWindowHeight + 40;
 			}
 
-			GUI.EndScrollView();
+			if(creatingLink) {
+				this.DrawVerticalBezier(new Vector3(linkStartPos.x + linkStartPos.width / 2,
+				                            		linkStartPos.y + linkStartPos.height),
+				                		Event.current.mousePosition,
+				                		false);
 
-			if ((Event.current.button == 0) && (Event.current.type == EventType.mouseDown)) {
-				GUI.FocusWindow(-1);
-				selectedGraphObject = null;
 				this.Repaint();
 			}
-		}
-		/*
-		if(selectedDanmaku.shooters.Count >= 2) {
-			for(int i=0;i<selectedDanmaku.shooters.Count; ++i) {
-				if(i == selectedDanmaku.shooters.Count - 1)
-					continue;
 
-				DMKBulletShooterController shooter1 = selectedDanmaku.shooters[i];
-				DMKBulletShooterController shooter2 = selectedDanmaku.shooters[i+1];
-				Vector3 start = new Vector3(shooter1.editorWindowRect.x + shooter1.editorWindowRect.width / 2,
-				                            shooter1.editorWindowRect.y + shooter1.editorWindowRect.height);
-				Vector3 end = new Vector3(shooter2.editorWindowRect.x + shooter2.editorWindowRect.width / 2,
-				                          shooter2.editorWindowRect.y);
-				
-				Handles.DrawBezier(start,
-				                   end ,
-				                   start + Vector3.up * 20,
-				                   end - Vector3.up * 20,
-				                   Color.green,
-				                   null,
-				                   3);
-			}
+		//	GUILayout.EndArea();
+			GUI.EndScrollView();
+
+			if ((Event.current.button == 0 || Event.current.button == 1) && 
+			    (Event.current.type == EventType.mouseUp) &&
+			    graphWindowRect.Contains(Event.current.mousePosition)) {
+
+				if(Event.current.button == 1 && !creatingLink)
+					this.DisplayShooterGraphMenu();
+				else
+					selectedGraphObject = null;
+
+				creatingLink = false;
+
+				this.Repaint();
+			}              
 		}
-		  */                 
-		GUILayout.EndArea();
 	}
 
 	void InspectorGUI() {
 
-		if(selectedGraphObject != null) {
-			GUILayout.BeginArea(new Rect(this.position.width - DMKDanmakuEditorX.InspectorWidth, 0, DMKDanmakuEditorX.InspectorWidth, this.position.height - ActionBarHeight));
-			
-			EditorGUILayout.BeginVertical("box");
-			inspectorScrollPosition = GUILayout.BeginScrollView(inspectorScrollPosition);
+		GUILayout.BeginArea(new Rect(this.position.width - DMKDanmakuEditorX.InspectorWidth, 0, DMKDanmakuEditorX.InspectorWidth, this.position.height),
+		                    (GUIStyle)"hostview");
+		
+		EditorGUILayout.BeginVertical();
+		inspectorScrollPosition = GUILayout.BeginScrollView(inspectorScrollPosition);
 
+		if(selectedGraphObject != null) {
 			if(typeof(DMKBulletShooterController).IsAssignableFrom(selectedGraphObject.GetType()))
 				this.ShooterGUI(selectedGraphObject as DMKBulletShooterController);
 			else if(typeof(DMKShooterModifier).IsAssignableFrom(selectedGraphObject.GetType()))
 				(selectedGraphObject as DMKShooterModifier).OnEditorGUI();
-
-			GUILayout.EndScrollView();
-			EditorGUILayout.EndVertical();
-			
-			GUILayout.EndArea();
 		}
+		else {
+			GUILayout.Label("No node selected");
+		}
+
+
+		GUILayout.EndScrollView();
+		EditorGUILayout.EndVertical();
 		
+		GUILayout.EndArea();
+
+
 	}
 
 	void ShooterGUILowerPart_BulletInfo(DMKBulletShooterController shooter) {
-		EditorGUILayout.BeginVertical("box");
+		Rect rr = GUILayoutUtility.GetLastRect();
+		GUI.Box (new Rect(0, rr.y + rr.height, rr.width, 2),
+		         "");
+		EditorGUILayout.BeginVertical("");
 		{
 			EditorGUILayout.BeginHorizontal();
 			EditorGUILayout.BeginVertical();
 			
-			string bulletInfoStr = "Bullet Info";
+			string bulletInfoStr = "Bullet";
 			if(!shooter.editorBulletInfoExpanded) {
-				bulletInfoStr = String.Format("Bullet Info (Speed = {0}, Accel = {1}, Lifetime = {2})", 
+				bulletInfoStr = String.Format("Bullet Info (Speed = {0}, Accel = {1})", 
 				                              shooter.bulletInfo.speed.value,
 				                              shooter.bulletInfo.accel.value,
 				                              shooter.bulletInfo.maxLifetime);
@@ -435,50 +535,13 @@ class DMKDanmakuEditorX: EditorWindow {
 			shooter.editorBulletInfoExpanded = EditorGUILayout.Foldout(shooter.editorBulletInfoExpanded, bulletInfoStr);
 			
 			if(shooter.editorBulletInfoExpanded) {
-				EditorGUILayout.BeginHorizontal();
-				
 				{
 					EditorGUILayout.BeginVertical();
 					shooter.bulletInfo.bulletSprite = EditorGUILayout.ObjectField("Sprite", shooter.bulletInfo.bulletSprite, typeof(Sprite), false) as Sprite;
 					shooter.bulletInfo.bulletColor  = EditorGUILayout.ColorField("Color", shooter.bulletInfo.bulletColor);
 					EditorGUILayout.EndVertical();
 				}
-				
-				GUILayoutOption[] options = {GUILayout.Width(PreviewTextureWidth), GUILayout.Height(PreviewTextureHeight)};
-				GUILayout.Label("", "textarea", options);
-				
-				{
-					// here's the trick
-					// the begin/endvertical will create a rect on the right side of the panel
-					// and with getLastRect we can get that rect
-					// thus we can get the position we need to draw the preview texture
-					Sprite sprite = shooter.bulletInfo.bulletSprite;
-					if(sprite != null) {
-						Texture2D tex = sprite.texture;
-						if(tex != null) {
-							Rect r = GUILayoutUtility.GetLastRect();
-							
-							r.x += Mathf.Clamp((PreviewTextureWidth - sprite.rect.width)/2, 0, PreviewTextureWidth);
-							r.y += Mathf.Clamp((PreviewTextureHeight - sprite.rect.height)/2, 0, PreviewTextureHeight);
-							r.width = sprite.rect.width;
-							r.height = sprite.rect.height;
-							
-							Rect texR = new Rect((float)sprite.rect.x / tex.width,
-							                     (float)sprite.rect.y / tex.height,
-							                     (float)sprite.rect.width / tex.width,
-							                     (float)sprite.rect.height / tex.height);
-							Color c = GUI.color;
-							GUI.color = shooter.bulletInfo.bulletColor;
-							GUI.DrawTextureWithTexCoords(r, 
-							                             tex, 
-							                             texR,
-							                             true);
-							GUI.color = c;
-						}
-					}
-				}
-				
-				EditorGUILayout.EndHorizontal();
+
 				
 				EditorGUILayout.Separator();
 				
@@ -515,11 +578,16 @@ class DMKDanmakuEditorX: EditorWindow {
 			EditorGUILayout.EndVertical();
 			EditorGUILayout.EndHorizontal();
 		}
+		EditorGUILayout.Space ();
 		EditorGUILayout.EndVertical();
 	}
 	
 	void ShooterGUILowerPart_Shooter(DMKBulletShooterController shooter) {
-		EditorGUILayout.BeginVertical("box");
+		Rect rr = GUILayoutUtility.GetLastRect();
+		GUI.Box (new Rect(0, rr.y + rr.height, rr.width, 2),
+		         "");
+
+		EditorGUILayout.BeginVertical();
 		string shooterStr = "Shooter ";
 		if(!shooter.editorShooterInfoExpanded)
 			shooterStr += shooter.DMKSummary();
@@ -566,7 +634,7 @@ class DMKDanmakuEditorX: EditorWindow {
 			
 			GUILayout.BeginHorizontal();
 			{
-				GUILayout.Space (32);
+				GUILayout.Space (20);
 				GUILayout.BeginVertical();
 				
 				if(shooter.positionOffset.type != DMKPositionOffsetType.Absolute)
@@ -634,6 +702,7 @@ class DMKDanmakuEditorX: EditorWindow {
 		string modifierTypeName = userData as string;
 		
 		DMKShooterModifier modifier = ScriptableObject.CreateInstance(modifierTypeName) as DMKShooterModifier;
+		selectedDanmaku.AddModifier(modifier);
 		// to do
 		//selectedShooter.shooter.AddModifier(modifier);
 	}
@@ -657,71 +726,132 @@ class DMKDanmakuEditorX: EditorWindow {
 	
 	#region shooter tools menu
 
-	void OnMenuCopyClicked() {
+	void OnShooterMenuCopyClicked() {
 		copiedShooter = selectedGraphObject as DMKBulletShooterController;
 	}
 	
-	void OnMenuPasteClicked() {
+	void OnShooterMenuPasteClicked() {
 		if(copiedShooter != null &&
 		   copiedShooter != selectedGraphObject) {
 			(selectedGraphObject as DMKBulletShooterController).CopyFrom(copiedShooter);
 		}
 	}
 	
-	void OnMenuRemoveClicked() {
+	void OnShooterMenuRemoveClicked() {
 		if(EditorUtility.DisplayDialog("Remove Shooter", "Are you sure you want to remove this Shooter?", "Yes", "No")) {
 			if(selectedGraphObject != null)
 				selectedDanmaku.shooters.Remove(selectedGraphObject as DMKBulletShooterController);
 			selectedGraphObject = null;
 		}
 	}
-	/*
-	void OnAddDeathShooterClicked(object userData) {
-		string typeName = userData as String;
-		
-		DMKDeathBulletShooterController shooterController = new DMKDeathBulletShooterController();
-		shooterController.shooter = ScriptableObject.CreateInstance(typeName) as DMKBulletShooter;
-		shooterController.shooter.parentController = shooterController;
-		if(shooterController != null) {
-			selectedShooter.deathController = shooterController;
-			shooterController.bulletContainer = selectedShooter.bulletContainer;
-			shooterController.parentController = selectedShooter.parentController;
-			shooterController.tag = selectedShooter.tag;
-			
-		}
-		EditorUtility.SetDirty(this.selectedController.gameObject);
+
+	void OnShooterMenuCreateLinkClicked() {
+		DMKBulletShooterController shooterController = selectedGraphObject as DMKBulletShooterController;
+
+		creatingLink = true;
+		linkTargetType = typeof(DMKShooterModifier);
+		linkSourceType = typeof(DMKBulletShooterController);
+		linkStartPos = shooterController.editorWindowRect;
+		shooterController.shooter.modifier = null;
 	}
-	
-	void OnRemoveDeathShooterClicked() {
-		selectedShooter.deathController = null;
-	}
-	*/
+
 	void DisplayShooterToolsMenu() {
 		GenericMenu menu = new GenericMenu();
-		
-		menu.AddItem(new GUIContent("Copy"), false, OnMenuCopyClicked);
+
+		DMKBulletShooterController shooterController = selectedGraphObject as DMKBulletShooterController;
+		if(!shooterController)
+			return;
+
+		menu.AddItem(new GUIContent("Link Modifier"), false, OnShooterMenuCreateLinkClicked);
+		menu.AddSeparator("");
+
+		menu.AddItem(new GUIContent("Copy"), false, OnShooterMenuCopyClicked);
 		if(copiedShooter != null &&
 		   copiedShooter != selectedGraphObject)
-			menu.AddItem(new GUIContent("Paste"), false, OnMenuPasteClicked);
+			menu.AddItem(new GUIContent("Paste"), false, OnShooterMenuPasteClicked);
 		else
 			menu.AddDisabledItem(new GUIContent("Paste"));
 		menu.AddSeparator("");
-		/*
-		if(selectedShooter.deathController == null) {
-			foreach(System.Reflection.Assembly asm in AppDomain.CurrentDomain.GetAssemblies()) {
-				foreach(Type type in asm.GetTypes()) {
-					if(type.BaseType == typeof(DMKBulletShooter)) {
-						menu.AddItem(new GUIContent("[DeathShooter] Add" + type.ToString()), false, OnAddDeathShooterClicked, type.ToString());
-					}
+
+	
+		menu.AddItem(new GUIContent("Remove"), false, OnShooterMenuRemoveClicked);
+		menu.ShowAsContext();
+	}
+	
+	#endregion
+
+	#region modifier tools menu
+
+	void OnModifierMenuCopyClicked() {
+		copiedModifier = selectedGraphObject as DMKShooterModifier;
+	}
+	
+	void OnModifierMenuPasteClicked() {
+		if(copiedModifier != null &&
+		   copiedModifier != selectedGraphObject) {
+			(selectedGraphObject as DMKShooterModifier).CopyFrom(copiedModifier);
+		}
+	}
+	
+	void OnModifierMenuRemoveClicked() {
+		if(selectedGraphObject != null)
+			selectedDanmaku.RemoveModifier(selectedGraphObject as DMKShooterModifier);
+		selectedGraphObject = null;
+	}
+	
+	void OnModifierMenuCreateLinkClicked() {
+		DMKShooterModifier modifier = selectedGraphObject as DMKShooterModifier;
+
+		creatingLink = true;
+		linkSourceType = linkTargetType = typeof(DMKShooterModifier);
+		linkStartPos = modifier.editorWindowRect;
+		modifier.next = null;
+	}
+
+	void DisplayModifierToolsMenu() {
+		GenericMenu menu = new GenericMenu();
+		
+		DMKShooterModifier modifier = selectedGraphObject as DMKShooterModifier;
+		if(!modifier)
+			return;
+
+		menu.AddItem(new GUIContent("Link Modifier"), false, OnModifierMenuCreateLinkClicked);
+		menu.AddSeparator("");
+		
+		menu.AddItem(new GUIContent("Copy"), false, OnModifierMenuCopyClicked);
+		if(copiedModifier != null &&
+		   copiedModifier != selectedGraphObject)
+			menu.AddItem(new GUIContent("Paste"), false, OnModifierMenuPasteClicked);
+		else
+			menu.AddDisabledItem(new GUIContent("Paste"));
+		menu.AddSeparator("");
+
+		menu.AddItem(new GUIContent("Remove"), false, OnModifierMenuRemoveClicked);
+		menu.ShowAsContext();
+	}
+
+	#endregion
+
+	#region shooter graph menu
+
+	void DisplayShooterGraphMenu() {
+		GenericMenu menu = new GenericMenu();
+
+		foreach(System.Reflection.Assembly asm in AppDomain.CurrentDomain.GetAssemblies()) {
+			foreach(Type type in asm.GetTypes()) {
+				if(type.BaseType == typeof(DMKBulletShooter)) {
+					menu.AddItem(new GUIContent("New Shooter/" + type.ToString()), false, OnAddShooterClicked, type.ToString());
 				}
 			}
-		} else {
-			menu.AddItem(new GUIContent("Remove Death Shooter"), false, OnRemoveDeathShooterClicked);
 		}
-		
-		menu.AddSeparator("");
-		*/
-		menu.AddItem(new GUIContent("Remove"), false, OnMenuRemoveClicked);
+
+		foreach(System.Reflection.Assembly asm in AppDomain.CurrentDomain.GetAssemblies()) {
+			foreach(Type type in asm.GetTypes()) {
+				if(type.BaseType == typeof(DMKShooterModifier)) {
+					menu.AddItem(new GUIContent("New Modifier/" + type.ToString()), false, OnAddModifierClicked, type.ToString());
+				}
+			}
+		}
 		menu.ShowAsContext();
 	}
 	

@@ -31,6 +31,9 @@ public class DMKBulletShooterController: ScriptableObject {
 	[SerializeField]
 	public DMKBulletShooter shooter = new DMKBulletShooter();
 
+	[SerializeField]
+	public List<DMKShooterModifier> modifiers = new List<DMKShooterModifier>();
+
 	public List<DMKBulletInfo> bullets;
 
 	bool  _enabled;
@@ -191,6 +194,22 @@ public class DMKBulletShooterController: ScriptableObject {
 			parentController.bulletContainer.Add (bullet);
 		}
 	}
+	
+	public void AddModifier (DMKShooterModifier modifier)
+	{
+		this.modifiers.Add(modifier);
+	}
+	
+	public void RemoveModifier (DMKShooterModifier modifier)
+	{
+		this.modifiers.Remove(modifier);
+		foreach(DMKShooterModifier m in this.modifiers) {
+			if(m.next == modifier) {
+				m.next = null;
+			}
+		}
+	}
+
 
 	
 	#region editor

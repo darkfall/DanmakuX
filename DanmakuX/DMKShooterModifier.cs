@@ -4,25 +4,19 @@ using System;
 
 [Serializable]
 public class DMKShooterModifier: ScriptableObject {
-	public DMKShooterModifier 				next = null;
-	public DMKBulletShooterController		parentShooter = null;
+	public DMKShooterModifier next = null;
 	
 	public virtual void DMKInit() {
 		if(next != null)
 			next.DMKInit();
 	}
 
-	public virtual void OnShootBullet(Vector3 pos, float direction, float speedMultiplier) {
-		this.DoShootBullet(pos, direction, speedMultiplier);
+	public virtual void OnShootBullet(DMKBulletShooterController parentShooter, Vector3 pos, float direction, float speedMultiplier) {
+		this.DoShootBullet(parentShooter, pos, direction, speedMultiplier);
 	}
 	
 	public virtual void CopyFrom(DMKShooterModifier rhs) {
-		if(rhs.next != null) {
-			this.next = (DMKShooterModifier)ScriptableObject.CreateInstance(rhs.GetType());
-			this.next.parentShooter = this.parentShooter;
-			this.next.CopyFrom(rhs);
-		} else
-			this.next = null;
+		this.next = rhs.next;
 	}
 
 	public virtual string DMKName() {
@@ -33,9 +27,9 @@ public class DMKShooterModifier: ScriptableObject {
 		
 	}
 
-	public void DoShootBullet(Vector3 pos, float direction, float speedMultiplier) {
+	public void DoShootBullet(DMKBulletShooterController parentShooter, Vector3 pos, float direction, float speedMultiplier) {
 		if(next != null)
-			next.OnShootBullet(pos, direction, speedMultiplier);
+			next.OnShootBullet(parentShooter, pos, direction, speedMultiplier);
 		else
 			parentShooter.CreateBullet(pos, direction, speedMultiplier);
 	}

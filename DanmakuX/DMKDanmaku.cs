@@ -11,7 +11,7 @@ public enum DMKDanmakuPlayMode {
 };
 
 [Serializable]
-public class DMKDanmaku {
+public class DMKDanmaku: ScriptableObject {
 	public string name;
 
 	public DMKDanmakuPlayMode playMode = DMKDanmakuPlayMode.All;
@@ -24,6 +24,9 @@ public class DMKDanmaku {
 	
 	[SerializeField]
 	public List<DMKBulletShooterController> shooters;
+	
+	[SerializeField]
+	public List<DMKShooterModifier> modifiers = new List<DMKShooterModifier>();
 
 	[SerializeField]
 	List<DMKBulletShooterController> _availableShooters;
@@ -72,6 +75,9 @@ public class DMKDanmaku {
 		foreach(DMKBulletShooterController emitter in _availableShooters) {
 			emitter.parentController = parentController;
 		}
+		foreach(DMKShooterModifier modifier in modifiers) {
+			modifier.DMKInit();
+		}
 
 		this.UpdateCurrentShooter();
 
@@ -119,6 +125,25 @@ public class DMKDanmaku {
 		}
 
 	}
+
+	
+	public void AddModifier (DMKShooterModifier modifier)
+	{
+		this.modifiers.Add(modifier);
+	}
+	
+	public void RemoveModifier (DMKShooterModifier modifier)
+	{
+		this.modifiers.Remove(modifier);
+		foreach(DMKShooterModifier m in this.modifiers) {
+			if(m.next == modifier) {
+				m.next = null;
+			}
+		}
+	}
+	
+	
+
 	
 	#region editor
 	

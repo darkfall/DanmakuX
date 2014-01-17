@@ -8,10 +8,10 @@ public class DMKLineModifier: DMKShooterModifier {
 	public int count = 1;
 	public float speedAttenuation = 1;
 
-	public override void OnShootBullet(Vector3 pos, float direction, float speedMultiplier) {
+	public override void OnShootBullet(DMKBulletShooterController parentController, Vector3 pos, float direction, float speedMultiplier) {
 		float sm = speedMultiplier;
 		for(int i=0; i<count; ++i) {
-			this.DoShootBullet(pos, direction, sm);
+			this.DoShootBullet(parentController, pos, direction, sm);
 			sm *= speedAttenuation;
 		}
 	}

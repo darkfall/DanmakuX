@@ -4,11 +4,6 @@ using UnityEditor;
 class DMKMenu {
 
 	[MenuItem("DanmakuX/Danmaku Editor", false, 1)]
-	static void OpenAttackStyleEditor() {
-		DMKDanmakuEditor.Create();
-	}
-
-	[MenuItem("DanmakuX/Danmaku EditorX", false, 1)]
 	static void OpenAttackStyleEditorX() {
 		DMKDanmakuEditorX.Create();
 	}

@@ -269,7 +269,7 @@ class DMKDanmakuEditor: EditorWindow {
 		string modifierTypeName = userData as string;
 		
 		DMKShooterModifier modifier = ScriptableObject.CreateInstance(modifierTypeName) as DMKShooterModifier;
-		_selectedShooter.shooter.AddModifier(modifier);
+		_selectedShooter.AddModifier(modifier);
 	}
 
 	void DisplayNewModifierMenu() {
@@ -513,7 +513,7 @@ class DMKDanmakuEditor: EditorWindow {
 				EditorGUILayout.BeginHorizontal();
 				GUILayout.Label(modifier.DMKName());
 				if(GUILayout.Button("-", "label", GUILayout.Width(16))) {
-					shooter.shooter.RemoveModifier(modifier);
+					shooter.RemoveModifier(modifier);
 				}
 				EditorGUILayout.EndHorizontal();
 			}

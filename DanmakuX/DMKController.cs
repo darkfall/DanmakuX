@@ -41,7 +41,7 @@ public class DMKController: MonoBehaviour {
 			_prevTime = EditorApplication.timeSinceStartup;
 		else
 			_prevTime = Time.timeSinceLevelLoad;
-		this.StartAttack(-1);
+		this.StartDanmaku(-1);
 	}
 
 	public void Update() {
@@ -75,7 +75,11 @@ public class DMKController: MonoBehaviour {
 		return maxBulletCount == 0 || bulletContainer.Count < maxBulletCount;
 	}
 
-	public void StartAttack(int index) {
+	public void StartDanmaku(DMKDanmaku danmaku) {
+		this.StartDanmaku(this.danmakus.IndexOf(danmaku));
+	}
+
+	public void StartDanmaku(int index) {
 		if(currentAttackIndex != -1) {
 			if(currentAttackIndex < this.danmakus.Count) {
 				this.danmakus[currentAttackIndex].Stop();
