@@ -97,6 +97,9 @@ public class DMKSubBulletShooterController: DMKNode {
 	}
 
 	public void OnShootBullet(DMKBullet bullet) {
+		if(!this.internalController.editorEnabled)
+			return;
+
 		if(trackingBullets == null)
 			trackingBullets = new List<BulletInfo>();
 		trackingBullets.Add(new BulletInfo(this, bullet));

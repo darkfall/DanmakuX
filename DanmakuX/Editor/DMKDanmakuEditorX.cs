@@ -253,12 +253,15 @@ class DMKDanmakuEditorX: EditorWindow {
 
 	void DrawShooterInfo(DMKBulletShooterController shooter, Rect windowRect, bool isSubShooter) {
 		GUI.skin.label.wordWrap = true;
-		if(!isSubShooter) {
-			shooter.editorEnabled = EditorGUI.Toggle(new Rect(0, 0, 16, 16), shooter.editorEnabled);
-			GUI.Label(new Rect(16, 0, windowRect.width, 16), shooter.DMKName());
-		} else {
-			GUI.Label(new Rect(2, 0, windowRect.width, 16), shooter.DMKName());
+
+		EditorGUI.BeginChangeCheck();
+		shooter.editorEnabled = EditorGUI.Toggle(new Rect(0, windowRect.height - 16, 16, 16), shooter.editorEnabled);
+		if(EditorGUI.EndChangeCheck()) {
+			selectedDanmaku.UpdateShooters();
+			selectedDanmaku.UpdateCurrentShooter();
 		}
+
+		GUI.Label(new Rect(2, 0, windowRect.width, 16), shooter.DMKName());
 		GUI.skin.label.wordWrap = false;
 
 		Sprite sprite = shooter.bulletInfo.bulletSprite;
