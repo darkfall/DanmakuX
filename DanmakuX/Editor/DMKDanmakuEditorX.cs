@@ -41,6 +41,8 @@ class DMKDanmakuEditorX: EditorWindow {
 	bool creatingLink = false;
 	Type linkSourceType;
 	Rect linkStartPos;
+
+	float shooterGraphHeight = 0;
 	
 	public static void Create() {
 		DMKDanmakuEditorX editor = (DMKDanmakuEditorX)EditorWindow.GetWindow<DMKDanmakuEditorX>("DanmakuX", true);
@@ -115,7 +117,7 @@ class DMKDanmakuEditorX: EditorWindow {
 	}
 
 	void ActionBarGUI() {
-		GUILayout.BeginArea(new Rect((this.position.width - ActionBarWidth - InspectorWidth) / 2, 
+		GUILayout.BeginArea(new Rect(40, 
 		                              this.position.height - ActionBarHeight - 16, 
 		                              ActionBarWidth, 
 		                              ActionBarHeight), 
@@ -432,30 +434,30 @@ class DMKDanmakuEditorX: EditorWindow {
 		}
 	}
 
-	void DrawSubControllerNode(DMKSubBulletShooterController controller, Rect windowRect, bool isSecondaryLevel = false) {
+	float DrawSubControllerNode(DMKSubBulletShooterController controller, Rect windowRect, bool isSecondaryLevel = false) {
 		if(controller.internalController == null)
-			return;
+			return windowRect.y + windowRect.height;
 		
 		Rect nodeWindowRect;
 		if(isSecondaryLevel)
 			nodeWindowRect = new Rect(windowRect.x,
-		                              windowRect.y - 60 - ShooterNodeWindowHeight + 20,
-		                              windowRect.width,
+			                          windowRect.y + 40 + ShooterNodeWindowHeight,
+			                          windowRect.width,
 		                              windowRect.height);
 		else
 			nodeWindowRect = new Rect(windowRect.x + 5,
-			                          windowRect.y - 60 - ShooterNodeWindowHeight + 20,
+			                          windowRect.y + 40 + ShooterNodeWindowHeight,
 			                          windowRect.width - 10,
 			                          windowRect.height - 10);
 
 				
 		this.DrawVerticalBezier(new Vector3(windowRect.x + windowRect.width / 2,
-		                                    windowRect.y),
+		                                    windowRect.y + windowRect.height),
 		                        new Vector3(nodeWindowRect.x + nodeWindowRect.width / 2,
-		            						nodeWindowRect.y + nodeWindowRect.height),
+		            						nodeWindowRect.y),
 		                        true);
 
-		
+
 		GUIStyle shooterStyle = (GUIStyle)"flow node 0";
 		if(selectedGraphObject == controller.internalController) {
 			shooterStyle = (GUIStyle)"flow node 0 on";
@@ -478,11 +480,11 @@ class DMKDanmakuEditorX: EditorWindow {
 
 		DMKSubBulletShooterController next = controller.internalController.subController;
 		while(next != null) {
-			this.DrawSubControllerNode(next, nodeWindowRect, true);
-			nodeWindowRect.y -= (60 + ShooterNodeWindowHeight);
+			nodeWindowRect.y = this.DrawSubControllerNode(next, nodeWindowRect, true);
 
 			next = next.internalController.subController;
 		}
+		return nodeWindowRect.y;
 	}
 
 	void ShooterGraphGUI() {
@@ -499,14 +501,9 @@ class DMKDanmakuEditorX: EditorWindow {
 			int shooterWidthRequired = selectedDanmaku.shooters.Count * (ShooterNodeWindowWidth + 40) - 40;
 			int widthRequired = Mathf.Max (triggerWidthRequired, shooterWidthRequired);
 
-			int heightRequired = 100 + TriggerNodeWindowHeight + DanmakuListWindowHeight + 
-								 ShooterNodeWindowHeight + 52 + 
-								 selectedDanmaku.modifiers.Count * (ModifierNodeWindowHeight + 40);
-
-			// to do, scroll height required?
 			shooterGraphScrollPosition =  GUI.BeginScrollView(graphWindowRect,
 			                    							  shooterGraphScrollPosition,
-			                                                  new Rect(0, 0, widthRequired + 40, heightRequired));
+			                                                  new Rect(0, 0, widthRequired + 40, shooterGraphHeight == 0 ? this.position.height : shooterGraphHeight));
 			GUI.Box(new Rect(shooterGraphScrollPosition.x, 
 			                 shooterGraphScrollPosition.y, 
 			                 this.position.width - InspectorWidth, 
@@ -515,32 +512,12 @@ class DMKDanmakuEditorX: EditorWindow {
 			        (GUIStyle)"flow background");
 		//	shooterGraphScrollPosition =  GUILayout.BeginScrollView(shooterGraphScrollPosition, (GUIStyle)"flow background");
 
-			nodeWindowRect.y = 60 + TriggerNodeWindowHeight + DanmakuListWindowHeight;
-			nodeWindowRect.x = Mathf.Clamp((this.position.width - InspectorWidth) / 2 - triggerWidthRequired / 2, 20, 9999);
-
-			foreach(DMKTrigger trigger in selectedDanmaku.triggers) {
-				GUIStyle triggerStyle = (GUIStyle)"flow node 0";
-				if(selectedGraphObject == trigger ||
-				   (creatingLink && 
-				 	linkSourceType == typeof(DMKBulletShooterController) &&
-				 	nodeWindowRect.Contains(Event.current.mousePosition))) {
-					triggerStyle = (GUIStyle)"flow node 0 on";
-				}
-
-				GUILayout.BeginArea(nodeWindowRect, triggerStyle);
-				this.OnTriggerWindow(trigger);
-				GUILayout.EndArea();
-
-				trigger.editorWindowRect = nodeWindowRect;
-
-				nodeWindowRect.x += TriggerNodeWindowWidth + 40;
-			}
-
 			nodeWindowRect = new Rect(Mathf.Clamp((this.position.width - InspectorWidth) / 2 - shooterWidthRequired / 2, 20, 9999),
-			                          nodeWindowRect.y + 52 + 40,
+			                          nodeWindowRect.y + DanmakuListWindowHeight + 40,
 			                          ShooterNodeWindowWidth,
 			                          ShooterNodeWindowHeight);
 
+			float bottomY = 0;
 			foreach(DMKBulletShooterController controller in selectedDanmaku.shooters) {
 				GUIStyle shooterStyle = (GUIStyle)"flow node 0";
 				if(selectedGraphObject == controller) {
@@ -563,14 +540,14 @@ class DMKDanmakuEditorX: EditorWindow {
 				}
 
 				if(controller.subController != null) {
-					this.DrawSubControllerNode(controller.subController, nodeWindowRect);
+					bottomY = Mathf.Max (this.DrawSubControllerNode(controller.subController, nodeWindowRect), bottomY);
 				}
 
 				nodeWindowRect.x += (ShooterNodeWindowWidth + 40);
 			}
 
 			nodeWindowRect = new Rect(Mathf.Max (widthRequired, this.position.width - InspectorWidth)/ 2 - ModifierNodeWindowWidth / 2,
-			                      	  nodeWindowRect.y + 52 + ShooterNodeWindowHeight,
+			                      	  bottomY + 52 + ShooterNodeWindowHeight,
 			                   		  ModifierNodeWindowWidth,
 			                   		  ModifierNodeWindowHeight);
 			
@@ -608,6 +585,8 @@ class DMKDanmakuEditorX: EditorWindow {
 
 				nodeWindowRect.y += ModifierNodeWindowHeight + 40;
 			}
+
+			shooterGraphHeight = nodeWindowRect.y;
 
 			if(creatingLink) {
 				Vector3 end = Event.current.mousePosition;
@@ -822,10 +801,12 @@ class DMKDanmakuEditorX: EditorWindow {
 
 		menu.AddItem(new GUIContent("Link Modifier"), false, OnShooterMenuCreateLinkClicked);
 
-		foreach(System.Reflection.Assembly asm in AppDomain.CurrentDomain.GetAssemblies()) {
-			foreach(Type type in asm.GetTypes()) {
-				if(type.BaseType == typeof(DMKBulletShooter)) {
-					menu.AddItem(new GUIContent("New Sub-Shooter/" + type.ToString()), false, OnShooterMenuAddSubShooterClicked, type.ToString());
+		if(shooterController.subController == null) {
+			foreach(System.Reflection.Assembly asm in AppDomain.CurrentDomain.GetAssemblies()) {
+				foreach(Type type in asm.GetTypes()) {
+					if(type.BaseType == typeof(DMKBulletShooter)) {
+						menu.AddItem(new GUIContent("New Sub-Shooter/" + type.ToString()), false, OnShooterMenuAddSubShooterClicked, type.ToString());
+					}
 				}
 			}
 		}
