@@ -29,6 +29,9 @@ public class DMKDanmaku: ScriptableObject {
 	public List<DMKShooterModifier> modifiers = new List<DMKShooterModifier>();
 
 	[SerializeField]
+	public List<DMKTrigger> triggers = new List<DMKTrigger>();
+
+	[SerializeField]
 	List<DMKBulletShooterController> _availableShooters;
 
 	[SerializeField]
@@ -51,8 +54,8 @@ public class DMKDanmaku: ScriptableObject {
 	public void UpdateCurrentShooter() {
 		switch(playMode) {
 		case DMKDanmakuPlayMode.All:
-			foreach(DMKBulletShooterController emitter in _availableShooters) {
-				emitter.enabled = true;
+			foreach(DMKBulletShooterController shooter in _availableShooters) {
+				shooter.enabled = true;
 			}
 			break;
 			
@@ -78,6 +81,8 @@ public class DMKDanmaku: ScriptableObject {
 		foreach(DMKShooterModifier modifier in modifiers) {
 			modifier.DMKInit();
 		}
+		foreach(DMKTrigger trigger in triggers)
+			trigger.DMKInit();
 
 		this.UpdateCurrentShooter();
 
@@ -95,9 +100,13 @@ public class DMKDanmaku: ScriptableObject {
 	}
 	
 	public void Update() {
+		foreach(DMKTrigger trigger in this.triggers)
+			trigger.DMKUpdateFrame(currentFrame);
+
 		if(playMode == DMKDanmakuPlayMode.All) {
 			foreach(DMKBulletShooterController shooter in _availableShooters) {
-				shooter.DMKUpdateFrame(currentFrame);
+				if(shooter.enabled)
+					shooter.DMKUpdateFrame(currentFrame);
 			}
 			currentFrame += 1;
 		} else {

@@ -79,7 +79,7 @@ class DMKControllerEditor: Editor {
 	public override void OnInspectorGUI() {
 		GUILayout.BeginHorizontal();
 		if(GUILayout.Button("Danmaku Editor")) {
-			DMKDanmakuEditor.Create();
+			DMKDanmakuEditorX.Create();
 		}
 		GUILayout.EndHorizontal();
 

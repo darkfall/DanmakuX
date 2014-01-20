@@ -76,11 +76,7 @@ public class DMKNWayShooter: DMKBulletShooter {
 		if(this.bulletCount < 0)
 			this.bulletCount = 0;
 
-		this.radius 	 = EditorGUILayout.FloatField("Emission Radius", this.radius);
-		this.accel1		 = EditorGUILayout.FloatField("Acceleration 1", this.accel1);
-		this.accel2 	 = EditorGUILayout.FloatField("Acceleration 2", this.accel2);
-		this._acceleration = this.accel1;
-
+		EditorGUI.BeginChangeCheck();
 		this.trackTarget = EditorGUILayout.Toggle("Facing Target", this.trackTarget);
 		if(!this.trackTarget) {
 			this.startAngle = EditorGUILayout.FloatField("Start Angle", this.startAngle);
@@ -88,6 +84,19 @@ public class DMKNWayShooter: DMKBulletShooter {
 			this.targetObject = (GameObject)EditorGUILayout.ObjectField("Target", this.targetObject, typeof(GameObject), true);
 		}
 		this.angleRange  = EditorGUILayout.FloatField("Angular Range", this.angleRange);
+		if(EditorGUI.EndChangeCheck())
+			this._currentAngle = this.startAngle;
+
+		this.radius = EditorGUILayout.FloatField("Emission Radius", this.radius);
+
+		EditorGUI.BeginChangeCheck();
+		this.accel1 = EditorGUILayout.FloatField("Acceleration 1", this.accel1);
+		if(EditorGUI.EndChangeCheck())
+			this._acceleration = this.accel1;
+
+		this.accel2 = EditorGUILayout.FloatField("Acceleration 2", this.accel2);
+		this._acceleration = this.accel1;
+
 	}
 
 	#endregion

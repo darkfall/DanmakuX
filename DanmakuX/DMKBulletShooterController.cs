@@ -13,6 +13,7 @@ public class DMKBulletShooterController: ScriptableObject {
 	public string 		tag;
 	public string 		identifier;
 	public int 			simulationCount = 1;
+	public bool			followParentDirection = false;
 
 	public DMKCurveProperty emissionCooldown = new DMKCurveProperty (30);
 	public int emissionLength = 0;
@@ -26,13 +27,11 @@ public class DMKBulletShooterController: ScriptableObject {
 	public DMKPositionOffset positionOffset = new DMKPositionOffset ();
 
 	[SerializeField]
-	public DMKDeathBulletShooterController deathController = null;
-
-	[SerializeField]
 	public DMKBulletShooter shooter = new DMKBulletShooter();
 
 	[SerializeField]
-	public List<DMKShooterModifier> modifiers = new List<DMKShooterModifier>();
+	public DMKSubBulletShooterController subController = null;
+
 
 	public List<DMKBulletInfo> bullets;
 
@@ -81,9 +80,12 @@ public class DMKBulletShooterController: ScriptableObject {
 		_currentFrame = currentFrame;
 		
 		if (!enabled || 
-		    currentFrame < startFrame ||
-		    this.Ended)
+		    currentFrame < startFrame)
 			return;
+		if(this.Ended) {
+			this.enabled = false;
+			return;
+		}
 		
 		if (_currentInterval != 0) {
 			--_currentInterval;
@@ -110,19 +112,20 @@ public class DMKBulletShooterController: ScriptableObject {
 					enabled = false;
 			}
 		}
-		
-		if (deathController != null)
-			deathController.DMKUpdateFrame (currentFrame);
+
+		if(subController != null)
+			subController.DMKUpdateFrame(currentFrame);
 	}
 	
 	public virtual void DMKInit ()
 	{
 		_currentCooldown = _currentFrame = _currentInterval = _prevFrame = _internalFrame = 0;
-		if (deathController != null)
-			deathController.DMKInit ();
 
 		shooter.DMKInit();
 		shooter.parentController = this;
+
+		if(subController)
+			subController.DMKInit();
 	}
 
 	public string DMKName() {
@@ -142,13 +145,7 @@ public class DMKBulletShooterController: ScriptableObject {
 		this.bulletContainer = controller.bulletContainer;
 		this.gameObject = controller.gameObject;
 		this.tag = controller.tag;
-		
-		if (controller.deathController != null) {
-			this.deathController = (DMKDeathBulletShooterController)ScriptableObject.CreateInstance (controller.deathController.GetType ());
-			this.deathController.CopyFrom (controller.deathController);
-		} else
-			this.deathController = null;
-		
+
 		if (controller.shooter != null) {
 			this.shooter = (DMKBulletShooter)ScriptableObject.CreateInstance (controller.shooter.GetType ());
 			this.shooter.parentController = this;
@@ -166,8 +163,11 @@ public class DMKBulletShooterController: ScriptableObject {
 			DMKBullet bullet = bulletObj.AddComponent<DMKBullet> ();
 			
 			bullet.bulletInfo.CopyFrom (this.bulletInfo, speedMultiplier);
+			if(followParentDirection && this.gameObject) {
+				direction += this.gameObject.transform.rotation.eulerAngles.z - 90;
+			}
+
 			bullet.bulletInfo.direction = direction * Mathf.Deg2Rad;
-			
 			SpriteRenderer renderer = bulletObj.AddComponent<SpriteRenderer> ();
 			renderer.sprite = this.bulletInfo.bulletSprite;
 			renderer.color = this.bulletInfo.bulletColor;
@@ -192,26 +192,12 @@ public class DMKBulletShooterController: ScriptableObject {
 			bullet.parentEmitter = this;
 			
 			parentController.bulletContainer.Add (bullet);
-		}
-	}
-	
-	public void AddModifier (DMKShooterModifier modifier)
-	{
-		this.modifiers.Add(modifier);
-	}
-	
-	public void RemoveModifier (DMKShooterModifier modifier)
-	{
-		this.modifiers.Remove(modifier);
-		foreach(DMKShooterModifier m in this.modifiers) {
-			if(m.next == modifier) {
-				m.next = null;
-			}
+
+			if(subController != null)
+				subController.OnShootBullet(bullet);
 		}
 	}
 
-
-	
 	#region editor
 	
 	public bool editorExpanded;
@@ -219,9 +205,9 @@ public class DMKBulletShooterController: ScriptableObject {
 	public bool editorBulletInfoExpanded = true;
 	public bool editorShooterInfoExpanded = true;
 	public bool editorModifierExpanded = true;
-	public Rect editorWindowRect = new Rect(100, 100, 120, 40);
-	
-	public void OnEditorGUI ()
+	public Rect editorWindowRect;
+
+	public void OnEditorGUI (bool showHelp = false)
 	{
 		this.shooter.OnEditorGUI();
 	}
