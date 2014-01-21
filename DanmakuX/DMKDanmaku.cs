@@ -151,7 +151,9 @@ public class DMKDanmaku: ScriptableObject {
 		}
 	}
 	
-	
+	public static void Copy(DMKDanmaku danmaku) {
+
+	}
 
 	
 	#region editor

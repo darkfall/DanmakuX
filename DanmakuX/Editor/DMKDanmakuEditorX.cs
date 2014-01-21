@@ -208,8 +208,9 @@ class DMKDanmakuEditorX: EditorWindow {
 					danmaku.editorExpanded = EditorGUILayout.Foldout(danmaku.editorExpanded, danmaku.name);
 				}
 
-				if(GUILayout.Button("-", "label", GUILayout.Width(12))) {
-					danmakuToRemove = danmaku;
+				GUILayoutOption[] options =  { GUILayout.Height(16), GUILayout.Width(16) };
+				if(GUILayout.Button(new GUIContent(Resources.LoadAssetAtPath<Texture2D>("Assets/Scripts/DanmakuX/Editor/Resources/Icons/settings.png")), "label", options)) {
+					this.ShowDanmakuOptionMenu(danmaku);
 				}
 
 				GUILayout.EndHorizontal();
@@ -219,14 +220,6 @@ class DMKDanmakuEditorX: EditorWindow {
 			}
 
 			GUILayout.EndVertical();
-		}
-		if(danmakuToRemove != null) {
-			if(selectedDanmaku == danmakuToRemove) {
-				selectedDanmaku = null;
-			}
-			selectedController.danmakus.Remove(danmakuToRemove);
-			this.Repaint();
-			return;
 		}
 
 		for(int i=0; i<selectedController.danmakus.Count; ++i) {
@@ -971,5 +964,44 @@ class DMKDanmakuEditorX: EditorWindow {
 	
 	#endregion
 
+	#region danmaku option menu
+
+	void OnDanmakuMenuCopyClicked(object userData) {
+
+	}
+
+	void OnDanmakuMenuPasteClicked(object userData) {
+
+	}
+
+	void OnDanmakuMenuPasteAsNewClicked(object userData) {
+
+	}
+
+	void OnDanmakuMenuRemoveClicked(object userData) {
+		if(selectedDanmaku == userData) {
+			selectedDanmaku = null;
+		}
+		selectedController.danmakus.Remove(userData as DMKDanmaku);
+		this.Repaint();
+	}
+	
+	void ShowDanmakuOptionMenu(DMKDanmaku danmaku) {
+		GenericMenu menu = new GenericMenu();
+
+		menu.AddItem(new GUIContent("Copy"), false, OnDanmakuMenuCopyClicked, danmaku);
+		if(copiedModifier != null &&
+		   copiedModifier != selectedGraphObject)
+			menu.AddItem(new GUIContent("Paste"), false, OnDanmakuMenuPasteClicked, danmaku);
+		else
+			menu.AddDisabledItem(new GUIContent("Paste"));
+		menu.AddItem(new GUIContent("Paste As New"), false, OnDanmakuMenuPasteAsNewClicked, danmaku);
+		menu.AddSeparator("");
+		
+		menu.AddItem(new GUIContent("Remove"), false, OnDanmakuMenuRemoveClicked, danmaku);
+		menu.ShowAsContext();
+	}
+
+	#endregion
 
 };
