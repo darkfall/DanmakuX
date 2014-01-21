@@ -89,14 +89,24 @@ public class DMKGUIUtility {
 	
 	public static void MakeCurveControl(ref DMKCurveProperty curve, string label) {
 		EditorGUILayout.BeginHorizontal();
-		if(curve.useCurve) {
-			curve.curve = EditorGUILayout.CurveField(label, curve.curve);
-		} else {
+		switch(curve.type) {
+		case DMKCurvePropertyType.Constant:
 			curve.value = EditorGUILayout.FloatField(label, curve.value);
+			break;
+		case DMKCurvePropertyType.Curve:
+			curve.curve = EditorGUILayout.CurveField(label, curve.curve);
+			break;
+		case DMKCurvePropertyType.RandomVal:
+			EditorGUILayout.BeginVertical();
+			curve.value = EditorGUILayout.FloatField(label, curve.value);
+			curve.valEnd = EditorGUILayout.FloatField(" ", curve.valEnd);
+			EditorGUILayout.EndVertical();
+			break;
 		}
-		curve.useCurve = MakeCurveToggle(curve.useCurve);
+		curve.type = (DMKCurvePropertyType)EditorGUILayout.EnumPopup(curve.type, GUILayout.Width(64));
 		EditorGUILayout.EndHorizontal();
 	}
+
 
 	public static void DrawSceneRect(Rect r, float z) {
 		Handles.DrawLine(new Vector3(r.x, r.y, z) ,

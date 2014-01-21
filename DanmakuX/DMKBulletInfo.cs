@@ -21,7 +21,7 @@ public class DMKBulletInfo {
 	public AnimationCurve scaleCurveX;
 	public AnimationCurve scaleCurveY;
 	
-	public DMKCurveProperty speed = new DMKCurveProperty(5);
+	public DMKCurveProperty speed = new DMKCurveProperty(5, 5);
 	public DMKCurveProperty accel = new DMKCurveProperty(0);
 	public DMKCurveProperty angularAccel = new DMKCurveProperty(0);
 	
@@ -40,8 +40,8 @@ public class DMKBulletInfo {
 		this.died = false;
 		
 		this.useScaleCurve	= prototype.useScaleCurve;
-		this.scaleCurveX	= prototype.scaleCurveX;
-		this.scaleCurveY    = prototype.scaleCurveY;
+		this.scaleCurveX	= DMKUtil.CopyCurve(prototype.scaleCurveX);
+		this.scaleCurveY    = DMKUtil.CopyCurve(prototype.scaleCurveY);
 		
 		this.collisionRect = prototype.collisionRect;
 		this.maxLifetime = prototype.maxLifetime;

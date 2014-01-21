@@ -114,25 +114,23 @@ public class DMKController: MonoBehaviour {
 			Rect cameraRect = DMKSettings.instance.GetCameraRect();
 		
 			List<DMKBullet> diedBullets = new List<DMKBullet>();
+			// to do, put bullet update in another thread
 			foreach(DMKBullet bullet in this.bulletContainer) {
 				DMKBulletInfo info = bullet.bulletInfo;
 				if(!info.died) {
 					Vector3 prevPos = bullet.gameObject.transform.position;
-					float dist = info.speed.value * DMKSettings.instance.unitPerPixel;
+					float dist = info.speed.get() * DMKSettings.instance.unitPerPixel;
 					bullet.gameObject.transform.position = new Vector3(prevPos.x + (float)(dist * Mathf.Cos (info.direction)),
 					                                                   prevPos.y + (float)(dist * Mathf.Sin (info.direction)), 
 					                                                   prevPos.z);
 
 					float currentTime = (float)(info.lifeFrame) / 60;
 					info.speed.Update(currentTime);
-					info.accel.Update(currentTime);
-					info.speed.value += info.accel.value;
-					info.angularAccel.Update(currentTime);
-					if(info.angularAccel.useCurve)
-						info.angularAccel.value *= Mathf.Deg2Rad;
-					
-					if(info.angularAccel.value != 0f) {
-						info.direction += info.angularAccel.value;
+					info.speed.value += info.accel.Update(currentTime);
+
+					float ang = info.angularAccel.Update(currentTime);
+					if(ang != 0f) {
+						info.direction += ang * Mathf.Deg2Rad;
 						bullet.gameObject.transform.rotation = Quaternion.AngleAxis(info.direction * Mathf.Rad2Deg + 90, Vector3.forward);
 					}
 

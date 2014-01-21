@@ -20,6 +20,7 @@ public class DMKBulletShooterController: ScriptableObject {
 	public int interval = 0;
 	public int startFrame = 0;
 	public int overallLength = 0;
+	public int groupId = 0;
 
 	public GameObject gameObject;
 
@@ -145,6 +146,11 @@ public class DMKBulletShooterController: ScriptableObject {
 		this.bulletContainer = controller.bulletContainer;
 		this.gameObject = controller.gameObject;
 		this.tag = controller.tag;
+		this.startFrame = controller.startFrame;
+		this.overallLength = controller.overallLength;
+		this.simulationCount = controller.simulationCount;
+		this.followParentDirection = controller.followParentDirection;
+		this.groupId = controller.groupId;
 
 		if (controller.shooter != null) {
 			this.shooter = (DMKBulletShooter)ScriptableObject.CreateInstance (controller.shooter.GetType ());

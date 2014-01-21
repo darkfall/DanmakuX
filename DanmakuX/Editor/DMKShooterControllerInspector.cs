@@ -26,8 +26,7 @@ class DMKShooterControllerInspector {
 			shooter.tag = EditorGUILayout.TextField("Tag", shooter.tag);
 
 			
-			if(shooter.positionOffset.type != DMKPositionOffsetType.Absolute)
-				shooter.gameObject = (GameObject)EditorGUILayout.ObjectField("Parent Object", shooter.gameObject, typeof(GameObject), true);
+			shooter.gameObject = (GameObject)EditorGUILayout.ObjectField("Parent Object", shooter.gameObject, typeof(GameObject), true);
 
 			GUILayout.BeginHorizontal();
 			{

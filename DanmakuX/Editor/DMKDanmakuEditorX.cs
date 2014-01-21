@@ -52,6 +52,8 @@ class DMKDanmakuEditorX: EditorWindow {
 	public void Init() {
 		this.minSize = new Vector2(InspectorWidth + DanmakuListWindowWidth + 20,
 		                           DanmakuListWindowHeight + ActionBarHeight + 200);
+
+		shooterGraphHeight = this.position.height;
 	}
 	
 	public void OnFocus() {
@@ -234,6 +236,8 @@ class DMKDanmakuEditorX: EditorWindow {
 				if(selectedDanmaku != danmaku) {
 					selectedDanmaku = danmaku;
 					selectedGraphObject = null;
+
+					this.Repaint();
 				}
 			}
 		}
@@ -506,7 +510,7 @@ class DMKDanmakuEditorX: EditorWindow {
 
 			shooterGraphScrollPosition =  GUI.BeginScrollView(graphWindowRect,
 			                    							  shooterGraphScrollPosition,
-			                                                  new Rect(0, 0, widthRequired + 40, shooterGraphHeight == 0 ? this.position.height : shooterGraphHeight));
+			                                                  new Rect(0, 0, widthRequired + 40, shooterGraphHeight));
 			GUI.Box(new Rect(shooterGraphScrollPosition.x, 
 			                 shooterGraphScrollPosition.y, 
 			                 this.position.width - InspectorWidth, 
@@ -515,8 +519,12 @@ class DMKDanmakuEditorX: EditorWindow {
 			        (GUIStyle)"flow background");
 		//	shooterGraphScrollPosition =  GUILayout.BeginScrollView(shooterGraphScrollPosition, (GUIStyle)"flow background");
 
+			float startY = nodeWindowRect.y + DanmakuListWindowHeight + 40;
+			if(shooterGraphHeight < this.position.height) {
+				startY = this.position.height / 2 - (shooterGraphHeight - DanmakuListWindowHeight) / 2;
+			}
 			nodeWindowRect = new Rect(Mathf.Clamp((this.position.width - InspectorWidth) / 2 - shooterWidthRequired / 2, 20, 9999),
-			                          nodeWindowRect.y + DanmakuListWindowHeight + 40,
+			                          startY,
 			                          ShooterNodeWindowWidth,
 			                          ShooterNodeWindowHeight);
 

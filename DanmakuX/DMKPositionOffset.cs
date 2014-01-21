@@ -6,7 +6,8 @@ public enum DMKPositionOffsetType {
 	Circular,
 	Curve,
 	Relative,
-	Absolute
+	Absolute,
+	Random
 }
 
 [Serializable]
