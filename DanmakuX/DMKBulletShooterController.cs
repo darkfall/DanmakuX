@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEditor;
 
 [Serializable]
-public class DMKBulletShooterController: ScriptableObject {
+public class DMKBulletShooterController: DMKNode {
 	public DMKController parentController = null;
 	public DMKBulletInfo bulletInfo = new DMKBulletInfo ();
 
@@ -207,11 +207,11 @@ public class DMKBulletShooterController: ScriptableObject {
 	#region editor
 	
 	public bool editorExpanded;
-	public bool editorEnabled = true;
 	public bool editorBulletInfoExpanded = true;
 	public bool editorShooterInfoExpanded = true;
 	public bool editorModifierExpanded = true;
-	public Rect editorWindowRect;
+//	public Rect editorWindowRect;
+//	public bool editorEnabled = true;
 
 	public void OnEditorGUI (bool showHelp = false)
 	{

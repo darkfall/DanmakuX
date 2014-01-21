@@ -15,40 +15,40 @@ public class DMKCurveProperty {
 	public DMKCurvePropertyType		type = DMKCurvePropertyType.Constant;
 	public AnimationCurve 			curve = null;
 
-	float _val;
+	public float currentVal;
 
 	public float get() {
-		return _val;
+		return currentVal;
 	}
 
 	public DMKCurveProperty(float v = 0) {
 		value = v;
 		curve = DMKUtil.NewCurve(v, v);
 
-		_val = value;
+		currentVal = value;
 	}
 
 	public DMKCurveProperty(float v1, float v2) {
 		value = v1;
 		curve = DMKUtil.NewCurve(v1, v2);
 
-		_val = value;
+		currentVal = value;
 	}
 	
 	public float Update(float t, bool newRand = false) {
 		switch(this.type) {
 		case DMKCurvePropertyType.Constant:
-			_val = value;
+			currentVal = value;
 			break;
 		case DMKCurvePropertyType.Curve:
-			_val = curve.Evaluate(t);
+			currentVal = curve.Evaluate(t);
 			break;
 		case DMKCurvePropertyType.RandomVal:
 			if(newRand)
-				_val = UnityEngine.Random.Range(value, valEnd);
+				currentVal = UnityEngine.Random.Range(value, valEnd);
 			break;
 		}
-		return _val;
+		return currentVal;
 	}
 
 	public static DMKCurveProperty Copy(DMKCurveProperty p) {
@@ -69,7 +69,7 @@ public class DMKCurveProperty {
 		n.curve = DMKUtil.CopyCurve(p.curve, v => {
 			return v * x;
 		});
-		n.Update(0, true);
+		n.currentVal = p.currentVal * x;
 		return n;
 	}
 };

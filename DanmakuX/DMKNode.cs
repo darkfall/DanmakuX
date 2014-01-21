@@ -10,6 +10,7 @@ public class DMKNode: ScriptableObject {
 	}
 
 	public Rect editorWindowRect;
+	public bool editorEnabled = true;
 
 	#endregion
 

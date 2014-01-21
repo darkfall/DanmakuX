@@ -3,6 +3,7 @@ using UnityEditor;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 public enum DMKDanmakuPlayMode {
 	Sequence,
@@ -23,7 +24,7 @@ public class DMKDanmaku: ScriptableObject {
 	public DMKController parentController;
 	
 	[SerializeField]
-	public List<DMKBulletShooterController> shooters;
+	public List<DMKBulletShooterController> shooters = new List<DMKBulletShooterController>();
 	
 	[SerializeField]
 	public List<DMKShooterModifier> modifiers = new List<DMKShooterModifier>();
@@ -35,7 +36,7 @@ public class DMKDanmaku: ScriptableObject {
 	List<DMKBulletShooterController> _availableShooters;
 
 	[SerializeField]
-	DMKBulletShooterController _currentShooter;
+	List<DMKBulletShooterController> _currentShooters;
 
 	[SerializeField]
 	int _currentShooterIndex;
@@ -48,7 +49,7 @@ public class DMKDanmaku: ScriptableObject {
 	public void UpdateShooters() {
 		_availableShooters = this.shooters.FindAll(o => {
 			return o.editorEnabled;
-		});
+		}).OrderBy(o => o.groupId).ToList();
 	}
 
 	public void UpdateCurrentShooter() {
@@ -87,9 +88,15 @@ public class DMKDanmaku: ScriptableObject {
 		this.UpdateCurrentShooter();
 
 		if(playMode != DMKDanmakuPlayMode.All) {
-			_currentShooter = _availableShooters[_currentShooterIndex];
-			_currentShooter.enabled = true;
-		}
+			_currentShooters = new List<DMKBulletShooterController>();
+			foreach(DMKBulletShooterController shooter in _availableShooters) {
+				if(shooter.groupId == _availableShooters[_currentShooterIndex].groupId) {
+					_currentShooters.Add (shooter);
+					shooter.enabled = true;
+				}
+			}
+		} else
+			_currentShooters = _availableShooters;
 	}
 	
 	public void Stop() {
@@ -104,26 +111,40 @@ public class DMKDanmaku: ScriptableObject {
 			trigger.DMKUpdateFrame(currentFrame);
 
 		if(playMode == DMKDanmakuPlayMode.All) {
-			foreach(DMKBulletShooterController shooter in _availableShooters) {
+			foreach(DMKBulletShooterController shooter in _currentShooters) {
 				if(shooter.enabled)
 					shooter.DMKUpdateFrame(currentFrame);
 			}
 			currentFrame += 1;
 		} else {
 			if(_currentInterval == 0) {
-				_currentShooter.DMKUpdateFrame(currentFrame);
-				if(_currentShooter.Ended) {
+				foreach(DMKBulletShooterController shooter in _currentShooters) {
+					if(shooter.enabled)
+						shooter.DMKUpdateFrame(currentFrame);
+				}
+				bool ended = _currentShooters.All(s => s.Ended);
+				if(ended) {
 					if(playMode == DMKDanmakuPlayMode.Randomized)
 						_currentShooterIndex = UnityEngine.Random.Range(0, _availableShooters.Count);
 					else {
-						++_currentShooterIndex;
+						while(_availableShooters[_currentShooterIndex].groupId == _currentShooters[0].groupId)
+							++_currentShooterIndex;
 						if(_currentShooterIndex >= _availableShooters.Count)
 							_currentShooterIndex = 0;
 					}
-					_currentShooter.enabled = false;
+
+					foreach(DMKBulletShooterController shooter in _currentShooters)
+						shooter.enabled = false;
+
+					_currentShooters = new List<DMKBulletShooterController>();
+					foreach(DMKBulletShooterController shooter in _availableShooters) {
+						if(shooter.groupId == _availableShooters[_currentShooterIndex].groupId) {
+							_currentShooters.Add (shooter);
+							shooter.enabled = true;
+						}
+					}
+					
 					_currentInterval = playInterval;
-					_currentShooter = _availableShooters[_currentShooterIndex];
-					_currentShooter.enabled = true;
 
 					currentFrame = 0;
 				}
@@ -149,10 +170,38 @@ public class DMKDanmaku: ScriptableObject {
 				m.next = null;
 			}
 		}
+		foreach(DMKBulletShooterController shooterController in this.shooters) {
+			if(shooterController.shooter.modifier == modifier) {
+				shooterController.shooter.modifier = null;
+			}
+		}
 	}
 	
-	public static void Copy(DMKDanmaku danmaku) {
+	public void CopyFrom(DMKDanmaku danmaku) {
+		this.playMode = danmaku.playMode;
+		this.playInterval = danmaku.playInterval;
+		this.parentController = danmaku.parentController;
 
+		this.shooters.Clear();
+		foreach(DMKBulletShooterController shooterController in danmaku.shooters) {
+			DMKBulletShooterController newController = (DMKBulletShooterController)ScriptableObject.CreateInstance<DMKBulletShooterController>();
+			newController.CopyFrom(shooterController);
+			this.shooters.Add (newController);
+		}
+
+		this.modifiers.Clear();
+		foreach(DMKShooterModifier modifier in danmaku.modifiers) {
+			DMKShooterModifier newModifier = (DMKShooterModifier)ScriptableObject.CreateInstance(modifier.GetType());
+			newModifier.CopyFrom(modifier);
+			this.modifiers.Add (newModifier);
+		}
+
+		this.triggers.Clear();
+		foreach(DMKTrigger trigger in danmaku.triggers) {
+			DMKTrigger newTrigger = (DMKTrigger)ScriptableObject.CreateInstance(trigger.GetType());
+			newTrigger.CopyFrom(trigger);
+			this.triggers.Add (newTrigger);
+		}
 	}
 
 	

@@ -20,7 +20,7 @@ public class DMKBulletShooter: ScriptableObject {
 
 	public void ShootBullet (Vector3 position, float direction, float speedMultiplier = 1f)
 	{
-		if (modifier != null) {
+		if (modifier != null && modifier.editorEnabled) {
 			modifier.OnShootBullet (parentController, position, direction, speedMultiplier);
 		} else
 			parentController.CreateBullet (position, direction, speedMultiplier);
@@ -43,7 +43,7 @@ public class DMKBulletShooter: ScriptableObject {
 	}
 
 	public virtual void CopyFrom(DMKBulletShooter shooter) {
-		this.modifier = shooter.modifier;
+		//this.modifier = shooter.modifier;
 	}
 
 	public virtual void OnShoot(int frame) {
