@@ -3,9 +3,9 @@ using UnityEngine;
 
 namespace danmakux {
 
-class DMKBulletContainer: MonoBehaviour {
+	class DMKBulletContainer: MonoBehaviour {
 
-};
+	};
 
-	
+		
 }

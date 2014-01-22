@@ -1,8 +1,11 @@
 using UnityEngine;
-using UnityEditor;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace danmakux {
 
@@ -30,29 +33,29 @@ namespace danmakux {
 		bool   _needInternalTimer;
 		int    _maxBulletCount;
 
+		double GetTimeSinceStartup() {
+#if UNITY_EDITOR
+			return EditorApplication.timeSinceStartup;
+#else
+			return Time.timeSinceLevelLoad;
+#endif
+		}
+
 		public void Awake() {
 			_needInternalTimer = DMKSettings.instance.CheckNeedInternalTimer();
 
-			if(Application.isEditor)
-				_prevTime = EditorApplication.timeSinceStartup;
-			else
-				_prevTime = Time.timeSinceLevelLoad;
+			_prevTime = GetTimeSinceStartup();
 		}
 
 		public void Start() {
-			if(Application.isEditor)
-				_prevTime = EditorApplication.timeSinceStartup;
-			else
-				_prevTime = Time.timeSinceLevelLoad;
+			_prevTime = GetTimeSinceStartup();
 			this.StartDanmaku(-1);
 		}
 
 		public void Update() {
 			double currentTime;
-			if(Application.isEditor)
-				currentTime = EditorApplication.timeSinceStartup;
-			else
-				currentTime = Time.timeSinceLevelLoad;
+			currentTime = GetTimeSinceStartup();
+
 			if(_needInternalTimer || Application.isEditor) {
 				double delta = currentTime - _prevTime;
 				if(delta < DMKSettings.instance.frameInterval) {

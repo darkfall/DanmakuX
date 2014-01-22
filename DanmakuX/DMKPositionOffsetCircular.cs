@@ -1,7 +1,8 @@
 using System;
-using UnityEditor;
 using UnityEngine;
-
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 namespace danmakux {
 
 	[Serializable]
@@ -15,13 +16,14 @@ namespace danmakux {
 			return new Vector2(radius * Mathf.Cos(ratio * Mathf.PI * 2),
 			                   radius * Mathf.Sin(ratio * Mathf.PI * 2));
 		}
-		
+#if UNITY_EDITOR
 		public override void OnEditorGUI(bool help) {
 			circularTime = EditorGUILayout.IntField("Circular Time", circularTime);
 			if(circularTime <= 0f)
 				circularTime = 1;
 			radius = EditorGUILayout.FloatField("Radius", radius);
 		}
+#endif
 	}
 		
 }

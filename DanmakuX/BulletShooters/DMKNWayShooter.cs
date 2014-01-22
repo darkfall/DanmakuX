@@ -1,6 +1,9 @@
 using System;
 using UnityEngine;
+
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 
 namespace danmakux {
 
@@ -76,7 +79,7 @@ namespace danmakux {
 		}
 
 		#region editor
-
+#if UNITY_EDITOR
 		public override void OnEditorGUI() {
 			base.OnEditorGUI();
 
@@ -112,7 +115,7 @@ namespace danmakux {
 			}
 
 		}
-
+#endif
 		#endregion
 
 	};

@@ -1,7 +1,8 @@
-using UnityEditor;
 using UnityEngine;
 using System;
-
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace danmakux {
 
@@ -14,11 +15,12 @@ namespace danmakux {
 			return new Vector2(offsetX.Evaluate(t),
 			                   offsetY.Evaluate(t));
 		}
-		
+#if UNITY_EDITOR
 		public override void OnEditorGUI(bool help) {
 			offsetX	= EditorGUILayout.CurveField("X", offsetX);
 			offsetY	= EditorGUILayout.CurveField("Y", offsetY);
 		}
+#endif
 	}
 
 	

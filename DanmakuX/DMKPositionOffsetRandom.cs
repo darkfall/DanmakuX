@@ -1,7 +1,8 @@
 using UnityEngine;
-using UnityEditor;
 using System;
-
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 namespace danmakux {
 
 	[Serializable]
@@ -13,11 +14,12 @@ namespace danmakux {
 			return new Vector2(UnityEngine.Random.Range(offsetStart.x, offsetEnd.x),
 			                   UnityEngine.Random.Range(offsetStart.y, offsetEnd.y));
 		}
-		
+		#if UNITY_EDITOR
 		public override void OnEditorGUI(bool help) {
 			offsetStart = EditorGUILayout.Vector2Field("", offsetStart);
 			offsetEnd = EditorGUILayout.Vector2Field("", offsetEnd);
 		}
+#endif
 	}
 
 

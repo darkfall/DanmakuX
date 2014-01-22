@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEditor;
 
 namespace danmakux {
 
@@ -34,7 +33,7 @@ namespace danmakux {
 			Vector3 dis = targetPos - position;
 			float angle = (float)(Math.Atan2 (dis.y, dis.x) * Mathf.Rad2Deg);
 			this.ShootBullet (position, angle, speedMultiplier);
-		}
+		} 
 
 		public virtual string DMKName () {
 			return "DMKBulletShooter";

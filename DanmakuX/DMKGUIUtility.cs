@@ -1,8 +1,12 @@
 using UnityEngine;
-using UnityEditor;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+
+#if UNITY_EDITOR
+using UnityEditor;
+using UnityEditorInternal;
+#endif
 
 namespace danmakux {
 
@@ -64,7 +68,7 @@ namespace danmakux {
 
 			listEntryNormal.alignment = listEntryFocused.alignment = textAlignment;
 			
-			EditorGUILayout.BeginVertical(boxStyle);
+			GUILayout.BeginVertical(boxStyle);
 			int newSelectedIndex = -1;
 			{
 				for(int index=0; index<entries.Count; ++index) {
@@ -75,7 +79,7 @@ namespace danmakux {
 				} 
 			}
 			
-			EditorGUILayout.EndVertical();
+			GUILayout.EndVertical();
 			
 			int result = newSelectedIndex == -1 ? selectedIndex : newSelectedIndex;
 			if(result != selectedIndex)
@@ -83,7 +87,7 @@ namespace danmakux {
 			return result;
 		}
 
-		
+#if UNITY_EDITOR
 		public static bool MakeCurveToggle(bool flag) {
 			GUILayout.Label("Curve", GUILayout.Width(40));
 			return EditorGUILayout.Toggle("", flag, GUILayout.Width(16));
@@ -120,7 +124,7 @@ namespace danmakux {
 			Handles.DrawLine(new Vector3(r.x + r.width, r.y, z) ,
 			                 new Vector3(r.x, r.y, z));
 		}
-
+		#endif
 		public static void DrawTextureWithTexCoordsAndColor(Rect dst, Texture tex, Rect coords, Color c) {
 			Color gc = GUI.color;
 			GUI.color = c;

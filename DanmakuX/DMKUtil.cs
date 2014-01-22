@@ -1,8 +1,13 @@
 using System;
 using UnityEngine;
+using System.Reflection;
+
+#if UNITY_EDITOR
+
 using UnityEditor;
 using UnityEditorInternal;
-using System.Reflection;
+
+#endif
 
 namespace danmakux {
 
@@ -46,12 +51,14 @@ namespace danmakux {
 			return strs.ToArray();
 		}
 
+#if UNITY_EDITOR
 		// http://forum.unity3d.com/threads/219799-Sort-Layer-Renderer-Extension
 		public static string[] GetSortingLayerNames() {
 			Type internalEditorUtilityType = typeof(InternalEditorUtility);
 			PropertyInfo sortingLayersProperty = internalEditorUtilityType.GetProperty("sortingLayerNames", BindingFlags.Static | BindingFlags.NonPublic);
 			return (string[])sortingLayersProperty.GetValue(null, new object[0]);
 		}
+#endif
 		
 	}
 

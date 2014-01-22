@@ -1,7 +1,8 @@
 using UnityEngine;
-using UnityEditor;
 using System;
-
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 namespace danmakux {
 
 	[Serializable]
@@ -11,10 +12,11 @@ namespace danmakux {
 		public override Vector2 Evaluate(float t) {
 			return offset;
 		}
-		
+#if UNITY_EDITOR		
 		public override void OnEditorGUI(bool help) {
 			offset = EditorGUILayout.Vector2Field("", offset);
 		}
+#endif
 	}
 
 	

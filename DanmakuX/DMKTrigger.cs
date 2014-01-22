@@ -1,9 +1,10 @@
-using UnityEditor;
 using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 namespace danmakux {
 
 	public enum DMKTriggerType {
@@ -104,6 +105,10 @@ namespace danmakux {
 			this.triggerTarget = trigger.triggerTarget;
 		}
 
+		
+		#region editor
+#if UNITY_EDITOR
+
 		public override void OnEditorGUI(bool showHelp) {
 			this.triggerFrame = EditorGUILayout.IntField("Trigger Frame", this.triggerFrame);
 			this.triggerType = (DMKTriggerType) EditorGUILayout.EnumPopup("Trigger Type", this.triggerType);
@@ -113,8 +118,7 @@ namespace danmakux {
 		public virtual string DMKName() {
 			return "Trigger";
 		}
-
-		#region editor
+#endif
 
 		#endregion
 

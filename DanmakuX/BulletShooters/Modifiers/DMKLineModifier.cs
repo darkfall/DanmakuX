@@ -1,6 +1,9 @@
-using UnityEditor;
 using UnityEngine;
 using System;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace danmakux {
 
@@ -32,12 +35,14 @@ namespace danmakux {
 			return "Line Modifier";
 		}
 
+#if UNITY_EDITOR
 		public override void OnEditorGUI(bool showHelp) {
 			base.OnEditorGUI(showHelp);
 
 			this.count = EditorGUILayout.IntField("Count", this.count);
 			this.speedAttenuation = EditorGUILayout.FloatField("Speed Attenuation", this.speedAttenuation);
 		}
+#endif
 	};
 
 }
