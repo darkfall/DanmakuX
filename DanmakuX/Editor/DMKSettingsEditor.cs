@@ -2,64 +2,74 @@ using UnityEditor;
 using UnityEngine;
 using System;
 
-public class DMKSettingsEditor: EditorWindow {
+namespace danmakux {
 
-	public static void Create() {
-		EditorWindow.GetWindow<DMKSettingsEditor>("DanmakuX Settings", true);
-	}
+	public class DMKSettingsEditor: EditorWindow {
 
-	public static void SettingsGUI() {
-		GUILayout.BeginVertical();
-		GUI.skin.label.wordWrap = false;
+		public static void Create() {
+			EditorWindow.GetWindow<DMKSettingsEditor>("DanmakuX Settings", true);
+		}
 
-		EditorGUILayout.HelpBox("DanmukuX Ver " + DMKSettings.Version + " by Robert Bu (darkfall3@gmail.com)", MessageType.None);
+		public static void SettingsGUI() {
+			GUILayout.BeginVertical();
+			GUI.skin.label.wordWrap = false;
 
-		EditorGUILayout.Space();
+			EditorGUILayout.HelpBox("DanmukuX Ver " + DMKSettings.Version + " by Robert Bu (darkfall3@gmail.com)", MessageType.None);
+
+			EditorGUILayout.Space();
+
+			DMKSettings settings = DMKSettings.instance;
+			
+			settings.targetFPS = EditorGUILayout.IntField("Target FPS", settings.targetFPS);
+			settings.pixelPerUnit = EditorGUILayout.IntField("Pixel To Units", settings.pixelPerUnit);
+			settings.unitPerPixel = 1f / settings.pixelPerUnit;
+			settings.frameInterval = 1f / settings.targetFPS;
+
+			EditorGUILayout.HelpBox("Global max number of bullets. Can be changed in individual danmakus.", MessageType.None);
+			settings.MaxNumBullets = EditorGUILayout.IntField("Max N-Bullets", settings.MaxNumBullets);
+			EditorGUILayout.Space();
+
+			settings.sortingLayerIndex = EditorGUILayout.Popup("Sorting Layer", settings.sortingLayerIndex, DMKUtil.GetSortingLayerNames());
+			settings.sortingOrder = EditorGUILayout.IntField("Sorting Order", settings.sortingOrder);
+
+			EditorGUILayout.HelpBox("If bullets are stored by controller, then bullets will die when the controller dies", MessageType.None);
+			settings.bulletStorePolicy = (DMKBulletStorePolicy)EditorGUILayout.EnumPopup("Bullet Store Policy", settings.bulletStorePolicy);
+
+			EditorGUILayout.HelpBox("Orthographic Size and Offset are measured in units, see Pixel To Units to convert to pixels", MessageType.None);
 		
-		DMKSettings.instance.targetFPS = EditorGUILayout.IntField("Target FPS", DMKSettings.instance.targetFPS);
-		DMKSettings.instance.pixelPerUnit = EditorGUILayout.IntField("Pixel To Units", DMKSettings.instance.pixelPerUnit);
-		DMKSettings.instance.unitPerPixel = 1f / DMKSettings.instance.pixelPerUnit;
-		DMKSettings.instance.frameInterval = 1f / DMKSettings.instance.targetFPS;
-
-		EditorGUILayout.HelpBox("Global max number of bullets. Can be changed in individual danmakus.", MessageType.None);
-		DMKSettings.instance.MaxNumBullets = EditorGUILayout.IntField("Max N-Bullets", DMKSettings.instance.MaxNumBullets);
-		EditorGUILayout.Space();
-
-		DMKSettings.instance.sortingLayerIndex = EditorGUILayout.Popup("Sorting Layer", DMKSettings.instance.sortingLayerIndex, DMKUtil.GetSortingLayerNames());
-		DMKSettings.instance.sortingOrder = EditorGUILayout.IntField("Sorting Order", DMKSettings.instance.sortingOrder);
-
-		EditorGUILayout.HelpBox("Orthographic Size and Offset are measured in units, see Pixel To Units to convert to pixels", MessageType.None);
-	
-		DMKSettings.instance.mainCamera = (Camera)EditorGUILayout.ObjectField("Camera", DMKSettings.instance.mainCamera, typeof(Camera), true);
-		if(DMKSettings.instance.mainCamera &&
-		   !DMKSettings.instance.mainCamera.isOrthoGraphic) {
-			Debug.LogError("DMKSettings: Main Camera must be orthigraphic");
-			DMKSettings.instance.mainCamera = null;
-		}
-		bool customOrthoSize = EditorGUILayout.Toggle("Custom Ortho Size", DMKSettings.instance.useCustomOrthoSize);
-		if(customOrthoSize && !DMKSettings.instance.useCustomOrthoSize) {
-			Camera camera = DMKSettings.instance.mainCamera == null ? Camera.main : DMKSettings.instance.mainCamera;
-			DMKSettings.instance.orthoSizeVertical = camera.orthographicSize;
-			DMKSettings.instance.orthoSizeHorizontal = camera.orthographicSize * camera.aspect;
-		}
-		DMKSettings.instance.useCustomOrthoSize = customOrthoSize;
-		if(DMKSettings.instance.useCustomOrthoSize) {
-			EditorGUI.BeginChangeCheck();
-			DMKSettings.instance.centerOffsetX = EditorGUILayout.FloatField("Center Offset X", DMKSettings.instance.centerOffsetX);
-			DMKSettings.instance.centerOffsetY = EditorGUILayout.FloatField("Center Offset Y", DMKSettings.instance.centerOffsetY);
-			DMKSettings.instance.orthoSizeHorizontal = EditorGUILayout.FloatField("Horizontal Ortho Size", DMKSettings.instance.orthoSizeHorizontal);
-			DMKSettings.instance.orthoSizeVertical = EditorGUILayout.FloatField("Vertical Ortho Size", DMKSettings.instance.orthoSizeVertical);
-			if(EditorGUI.EndChangeCheck()) {
-				SceneView.RepaintAll();
+			settings.mainCamera = (Camera)EditorGUILayout.ObjectField("Camera", settings.mainCamera, typeof(Camera), true);
+			if(settings.mainCamera &&
+			   !settings.mainCamera.isOrthoGraphic) {
+				Debug.LogError("DMKSettings: Main Camera must be orthigraphic");
+				settings.mainCamera = null;
 			}
+			bool customOrthoSize = EditorGUILayout.Toggle("Custom Ortho Size", settings.useCustomOrthoSize);
+			if(customOrthoSize && !settings.useCustomOrthoSize) {
+				Camera camera = settings.mainCamera == null ? Camera.main : settings.mainCamera;
+				settings.orthoSizeVertical = camera.orthographicSize;
+				settings.orthoSizeHorizontal = camera.orthographicSize * camera.aspect;
+			}
+			settings.useCustomOrthoSize = customOrthoSize;
+			if(settings.useCustomOrthoSize) {
+				EditorGUI.BeginChangeCheck();
+				settings.centerOffsetX = EditorGUILayout.FloatField("Center Offset X", settings.centerOffsetX);
+				settings.centerOffsetY = EditorGUILayout.FloatField("Center Offset Y", settings.centerOffsetY);
+				settings.orthoSizeHorizontal = EditorGUILayout.FloatField("Horizontal Ortho Size", settings.orthoSizeHorizontal);
+				settings.orthoSizeVertical = EditorGUILayout.FloatField("Vertical Ortho Size", settings.orthoSizeVertical);
+				if(EditorGUI.EndChangeCheck()) {
+					SceneView.RepaintAll();
+				}
+			}
+
+			GUI.skin.label.wordWrap = true;
+			GUILayout.EndVertical();
 		}
 
-		GUI.skin.label.wordWrap = true;
-		GUILayout.EndVertical();
+		public void OnGUI() {
+			SettingsGUI();
+		}
+
 	}
 
-	public void OnGUI() {
-		SettingsGUI();
-	}
-
+	
 }

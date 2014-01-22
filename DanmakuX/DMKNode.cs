@@ -1,17 +1,21 @@
 using UnityEngine;
 
-[System.Serializable]
-public class DMKNode: ScriptableObject {
+namespace danmakux {
 
-	#region editor
+	[System.Serializable]
+	public class DMKNode: ScriptableObject {
 
-	public virtual void OnEditorGUI(bool showHelp = false) {
+		#region editor
 
-	}
+		public virtual void OnEditorGUI(bool showHelp = false) {
 
-	public Rect editorWindowRect;
-	public bool editorEnabled = true;
+		}
 
-	#endregion
+		public Rect editorWindowRect;
+		public bool editorEnabled = true;
 
-};
+		#endregion
+
+	};
+		
+}

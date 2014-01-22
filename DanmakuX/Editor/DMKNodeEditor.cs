@@ -1,10 +1,14 @@
 using UnityEngine;
 using UnityEditor;
 
-class DMKNodeEditor {
+namespace danmakux {
 
-	public DMKNode node;
+	class DMKNodeEditor {
+
+		public DMKNode node = null;
 
 
 
-};
+	};
+	
+}

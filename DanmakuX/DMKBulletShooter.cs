@@ -4,59 +4,63 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
-[Serializable]
-public class DMKBulletShooter: ScriptableObject {
+namespace danmakux {
 
-	[SerializeField]
-	public DMKShooterModifier modifier = null;
+	[Serializable]
+	public class DMKBulletShooter: ScriptableObject {
 
-	public DMKBulletShooterController parentController = null;
+		[SerializeField]
+		public DMKShooterModifier modifier = null;
 
-	public void DMKInit() {	
-		if (modifier != null)
-			modifier.DMKInit ();
-		this.OnInit();
-	}
+		public DMKBulletShooterController parentController = null;
 
-	public void ShootBullet (Vector3 position, float direction, float speedMultiplier = 1f)
-	{
-		if (modifier != null && modifier.editorEnabled) {
-			modifier.OnShootBullet (parentController, position, direction, speedMultiplier);
-		} else
-			parentController.CreateBullet (position, direction, speedMultiplier);
-	}
-	
-	public void ShootBulletTo (Vector3 position, GameObject target, float speedMultiplier = 1f)
-	{
-		Vector3 targetPos = target.transform.position;
-		Vector3 dis = targetPos - position;
-		float angle = (float)(Math.Atan2 (dis.y, dis.x) * Mathf.Rad2Deg);
-		this.ShootBullet (position, angle, speedMultiplier);
-	}
+		public void DMKInit() {	
+			if (modifier != null)
+				modifier.DMKInit ();
+			this.OnInit();
+		}
 
-	public virtual string DMKName () {
-		return "DMKBulletShooter";
-	}
+		public void ShootBullet (Vector3 position, float direction, float speedMultiplier = 1f)
+		{
+			if (modifier != null && modifier.editorEnabled) {
+				modifier.OnShootBullet (parentController, position, direction, speedMultiplier);
+			} else
+				parentController.CreateBullet (position, direction, speedMultiplier);
+		}
+		
+		public void ShootBulletTo (Vector3 position, GameObject target, float speedMultiplier = 1f)
+		{
+			Vector3 targetPos = target.transform.position;
+			Vector3 dis = targetPos - position;
+			float angle = (float)(Math.Atan2 (dis.y, dis.x) * Mathf.Rad2Deg);
+			this.ShootBullet (position, angle, speedMultiplier);
+		}
 
-	public virtual string DMKSummary() {
-		return "";
-	}
+		public virtual string DMKName () {
+			return "DMKBulletShooter";
+		}
 
-	public virtual void CopyFrom(DMKBulletShooter shooter) {
-		//this.modifier = shooter.modifier;
-	}
+		public virtual string DMKSummary() {
+			return "";
+		}
 
-	public virtual void OnShoot(int frame) {
+		public virtual void CopyFrom(DMKBulletShooter shooter) {
+			//this.modifier = shooter.modifier;
+		}
 
-	}
+		public virtual void OnShoot(int frame) {
 
-	public virtual void OnInit() {
+		}
 
-	}
+		public virtual void OnInit() {
 
-	public virtual void OnEditorGUI() {
+		}
 
-	}
+		public virtual void OnEditorGUI() {
 
-};
+		}
 
+	};
+
+		
+}
