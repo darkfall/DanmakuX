@@ -94,9 +94,16 @@ namespace danmakux {
 			if(bulletContainer != null && DMKSettings.instance.bulletStorePolicy == DMKBulletStorePolicy.ByController)
 				DestroyImmediate(bulletContainer);
 			bulletContainer = DMKSettings.instance.GetBulletContainer(this.parentController);
-			foreach(DMKBulletShooterController emitter in shooters) {
-				emitter.parentController = parentController;
-				emitter.bulletContainer = bulletContainer;
+			foreach(DMKBulletShooterController shooterController in shooters) {
+				shooterController.parentController = parentController;
+				shooterController.bulletContainer = bulletContainer;
+
+				DMKSubBulletShooterController subController = shooterController.subController;
+				while(subController != null) {
+					subController.internalController.parentController = parentController;
+					subController.internalController.bulletContainer = bulletContainer;
+					subController = subController.internalController.subController;
+				}
 			}
 			foreach(DMKShooterModifier modifier in modifiers) {
 				modifier.DMKInit();
