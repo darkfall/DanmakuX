@@ -558,7 +558,7 @@ namespace danmakux {
 					if(controller.subController != null) {
 						bottomY = Mathf.Max (this.DrawSubControllerNode(controller.subController, nodeWindowRect), bottomY);
 					} else {
-						bottomY = nodeWindowRect.y;
+						bottomY = Mathf.Max (nodeWindowRect.y, bottomY);
 					}
 
 					nodeWindowRect.x += (ShooterNodeWindowWidth + 40);
@@ -815,6 +815,7 @@ namespace danmakux {
 			shooterController.bulletContainer = selectedController.bulletContainer;
 			shooterController.overallLength = 30;
 			shooterController.gameObject = selectedController.gameObject;
+			shooterController.followParentDirection = true;
 
 			DMKSubBulletShooterController subController = (DMKSubBulletShooterController)ScriptableObject.CreateInstance<DMKSubBulletShooterController>();
 			subController.internalController = shooterController;
@@ -836,7 +837,7 @@ namespace danmakux {
 				foreach(System.Reflection.Assembly asm in AppDomain.CurrentDomain.GetAssemblies()) {
 					foreach(Type type in asm.GetTypes()) {
 						if(type.BaseType == typeof(DMKBulletShooter)) {
-							menu.AddItem(new GUIContent("New Sub-Shooter/" + type.ToString()), false, OnShooterMenuAddSubShooterClicked, type.ToString());
+							menu.AddItem(new GUIContent("New Sub-Shooter/" + type.ToString()), false, OnShooterMenuAddSubShooterClicked, type);
 						}
 					}
 				}
@@ -847,7 +848,7 @@ namespace danmakux {
 				foreach(System.Reflection.Assembly asm in AppDomain.CurrentDomain.GetAssemblies()) {
 					foreach(Type type in asm.GetTypes()) {
 						if(type.BaseType == typeof(DMKTrigger)) {
-							menu.AddItem(new GUIContent("New Trigger/" + type.ToString()), false, OnAddTriggerClicked, type.ToString());
+							menu.AddItem(new GUIContent("New Trigger/" + type.ToString()), false, OnAddTriggerClicked, type);
 						}
 					}
 				}
