@@ -59,10 +59,10 @@ namespace danmakux {
 			}
 		}
 
-		public override void CopyFrom(DMKBulletShooter emitter)
+		public override void CopyFrom(DMKBulletShooter shooter)
 		{
-			if(emitter.GetType() == typeof(DMKNWayShooter)) {
-				DMKNWayShooter cs = emitter as DMKNWayShooter;
+			if(shooter.GetType() == typeof(DMKNWayShooter)) {
+				DMKNWayShooter cs = shooter as DMKNWayShooter;
 				this.accel1 = cs.accel1;
 				this.accel2 = cs.accel2;
 				this.angleRange = DMKCurveProperty.Copy(cs.angleRange);
@@ -72,7 +72,7 @@ namespace danmakux {
 				this.targetObject = cs.targetObject;
 				this.trackTarget = cs.trackTarget;
 			}
-			base.CopyFrom (emitter);
+			base.CopyFrom (shooter);
 		}
 
 		#region editor

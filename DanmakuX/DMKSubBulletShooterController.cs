@@ -8,7 +8,9 @@ namespace danmakux {
 
 	public class DMKSubBulletShooterController: DMKNode {
 
+		[SerializeField]
 		public DMKBulletShooterController internalController;
+
 		public List<BulletInfo> trackingBullets = new List<BulletInfo>();
 
 		public int emissionCooldown { get { return (int)internalController.emissionCooldown.value; } }

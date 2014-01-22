@@ -30,11 +30,10 @@ namespace danmakux {
 		public DMKPositionOffset positionOffset = new DMKPositionOffset ();
 
 		[SerializeField]
-		public DMKBulletShooter shooter = null;
+		public DMKBulletShooter shooter;
 
 		[SerializeField]
-		public DMKSubBulletShooterController subController = null;
-
+		public DMKSubBulletShooterController subController;
 
 		public List<DMKBulletInfo> bullets;
 
@@ -222,7 +221,7 @@ namespace danmakux {
 	//	public Rect editorWindowRect;
 	//	public bool editorEnabled = true;
 
-		public void OnEditorGUI (bool showHelp = false)
+		public override void OnEditorGUI (bool showHelp)
 		{
 			this.shooter.OnEditorGUI();
 		}

@@ -188,6 +188,14 @@ namespace danmakux {
 				if(shooterController.shooter.modifier == modifier) {
 					shooterController.shooter.modifier = null;
 				}
+				DMKSubBulletShooterController subController = shooterController.subController;
+				if(subController != null) {
+					while(subController != null) {
+						if(subController.internalController.shooter.modifier == modifier)
+							subController.internalController.shooter.modifier = null;
+						subController = subController.internalController.subController;
+					}
+				}
 			}
 		}
 		

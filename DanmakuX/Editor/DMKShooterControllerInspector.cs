@@ -136,7 +136,7 @@ namespace danmakux {
 			shooter.editorShooterInfoExpanded = EditorGUILayout.Foldout(shooter.editorShooterInfoExpanded, shooterStr);
 			if(shooter.editorShooterInfoExpanded) {
 				shooter.followParentDirection = EditorGUILayout.Toggle("Parent Direction", shooter.followParentDirection);
-				shooter.OnEditorGUI();
+				shooter.OnEditorGUI(false);
 			}
 			EditorGUILayout.EndVertical();
 		}

@@ -196,12 +196,15 @@ namespace danmakux {
 			                       0,
 			                       24,
 			                       16),
-			              "+",
+			              new GUIContent(Resources.LoadAssetAtPath<Texture2D>("Assets/Scripts/DanmakuX/Editor/Resources/Icons/settings.png")),
 			              "label")) {
-				this.CreateNewDanmaku();
+				
+				this.ShowDanmakuOptionMenu(selectedDanmaku);
+
+			//	this.CreateNewDanmaku();
 			}
 
-			danmakuListScrollPosition = GUILayout.BeginScrollView(danmakuListScrollPosition);
+			danmakuListScrollPosition = EditorGUILayout.BeginScrollView(danmakuListScrollPosition);
 			for(int i=0; i<selectedController.danmakus.Count; ++i) {
 				DMKDanmaku danmaku = selectedController.danmakus[i];
 
@@ -210,7 +213,6 @@ namespace danmakux {
 				{
 					GUILayout.BeginHorizontal();
 					GUI.SetNextControlName("danmaku_" + i.ToString());
-
 					if(selectedDanmaku == danmaku) {
 						GUIStyle s = new GUIStyle(EditorStyles.foldout);
 						s.normal.textColor = s.onNormal.textColor = s.onFocused.textColor;
@@ -220,13 +222,9 @@ namespace danmakux {
 					} else {
 						danmaku.editorExpanded = EditorGUILayout.Foldout(danmaku.editorExpanded, danmaku.name);
 					}
-
-					GUILayoutOption[] options =  { GUILayout.Height(16), GUILayout.Width(16) };
-					if(GUILayout.Button(new GUIContent(Resources.LoadAssetAtPath<Texture2D>("Assets/Scripts/DanmakuX/Editor/Resources/Icons/settings.png")), "label", options)) {
-						this.ShowDanmakuOptionMenu(danmaku);
-					}
-
+					
 					GUILayout.EndHorizontal();
+
 				}
 				if(danmaku.editorExpanded) {
 					this.DanmakuGUI(danmaku);
@@ -234,21 +232,26 @@ namespace danmakux {
 
 				GUILayout.EndVertical();
 			}
+			
+			EditorGUILayout.EndScrollView();
 
-			for(int i=0; i<selectedController.danmakus.Count; ++i) {
-				DMKDanmaku danmaku = selectedController.danmakus[i];
-
-				if(GUI.GetNameOfFocusedControl() == "danmaku_" + i.ToString()) {
-					if(selectedDanmaku != danmaku) {
-						selectedDanmaku = danmaku;
-						selectedGraphObject = null;
-
-						this.Repaint();
+			if(Event.current.type == EventType.Repaint) {
+				for(int i=0; i<selectedController.danmakus.Count; ++i) {
+					DMKDanmaku danmaku = selectedController.danmakus[i];
+					
+					if(GUI.GetNameOfFocusedControl() == "danmaku_" + i.ToString()) {
+					//	Debug.Log(GUI.GetNameOfFocusedControl());
+						if(selectedDanmaku != danmaku) {
+							selectedDanmaku = danmaku;
+							selectedGraphObject = null;
+							
+						//	this.Repaint();
+						}
 					}
 				}
+
 			}
 
-			GUILayout.EndScrollView();
 		}
 
 		void DanmakuListGUI() {
@@ -257,7 +260,6 @@ namespace danmakux {
 		
 			GUILayout.BeginArea(new Rect(0, 0, DanmakuListWindowWidth, DanmakuListWindowHeight), s);
 			this.OnDanmakuListWindow();
-
 			GUILayout.EndArea();
 		}
 
@@ -546,6 +548,9 @@ namespace danmakux {
 
 					controller.editorWindowRect = nodeWindowRect;
 
+					if(controller.shooter == null)
+						continue;
+
 					if(controller.shooter.modifier != null) {
 						DMKShooterModifier modifier = controller.shooter.modifier;
 						this.DrawVerticalBezier(new Vector3(nodeWindowRect.x + nodeWindowRect.width / 2,
@@ -672,7 +677,7 @@ namespace danmakux {
 				if(typeof(DMKBulletShooterController).IsAssignableFrom(selectedGraphObject.GetType()))
 					DMKShooterControllerInspector.OnEditorGUI(selectedGraphObject as DMKBulletShooterController);
 				else if(typeof(DMKShooterModifier).IsAssignableFrom(selectedGraphObject.GetType())) {
-					(selectedGraphObject as DMKShooterModifier).OnEditorGUI();
+					(selectedGraphObject as DMKShooterModifier).OnEditorGUI(false);
 				}
 			}
 			else {
@@ -1018,21 +1023,23 @@ namespace danmakux {
 			selectedController.danmakus.Remove(userData as DMKDanmaku);
 			this.Repaint();
 		}
+
+		void OnDanmakuMenuCreateNewClicked(object userData) {
+			this.CreateNewDanmaku();
+		}
 		
 		void ShowDanmakuOptionMenu(DMKDanmaku danmaku) {
 			GenericMenu menu = new GenericMenu();
 
-			menu.AddItem(new GUIContent("Copy"), false, OnDanmakuMenuCopyClicked, danmaku);
-			if(copiedDanmaku != null &&
-			   copiedDanmaku != selectedGraphObject)
-				menu.AddItem(new GUIContent("Paste"), false, OnDanmakuMenuPasteClicked, danmaku);
-			else
-				menu.AddDisabledItem(new GUIContent("Paste"));
+			menu.AddItem(new GUIContent("Create New Danmaku"), false, OnDanmakuMenuCreateNewClicked, danmaku);
+			menu.AddSeparator("");
+			menu.AddItem(new GUIContent("Copy Selected"), false, OnDanmakuMenuCopyClicked, danmaku);
+			menu.AddItem(new GUIContent("Paste"), false, OnDanmakuMenuPasteClicked, danmaku);
 			if(copiedDanmaku != null)
 				menu.AddItem(new GUIContent("Paste As New"), false, OnDanmakuMenuPasteAsNewClicked, danmaku);
 			menu.AddSeparator("");
 			
-			menu.AddItem(new GUIContent("Remove"), false, OnDanmakuMenuRemoveClicked, danmaku);
+			menu.AddItem(new GUIContent("Remove Selected"), false, OnDanmakuMenuRemoveClicked, danmaku);
 			menu.ShowAsContext();
 		}
 

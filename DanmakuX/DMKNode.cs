@@ -7,7 +7,7 @@ namespace danmakux {
 
 		#region editor
 
-		public virtual void OnEditorGUI(bool showHelp = false) {
+		public virtual void OnEditorGUI(bool showHelp) {
 
 		}
 
