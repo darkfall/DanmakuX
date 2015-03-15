@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using System.Reflection;
+using System.Linq;
 
 #if UNITY_EDITOR
 
@@ -49,6 +50,10 @@ namespace danmakux {
 			foreach(object obj in entries)
 				strs.Add(obj.ToString());
 			return strs.ToArray();
+		}
+
+		public static string GetTypeClassName(Type t) {
+			return t.ToString().Split(new char[] {'.'}).Last();
 		}
 
 #if UNITY_EDITOR

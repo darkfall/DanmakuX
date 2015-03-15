@@ -61,13 +61,10 @@ namespace danmakux {
 				if(delta < DMKSettings.instance.frameInterval) {
 					return;
 				}
-				double realDelta;
 				if(_prevTime < currentTime - DMKSettings.instance.frameInterval &&
 				   _prevTime > currentTime - (DMKSettings.instance.frameInterval * 2)) {
-					realDelta = DMKSettings.instance.frameInterval;
 					_prevTime += DMKSettings.instance.frameInterval;
 				} else {
-					realDelta = delta;
 					_prevTime = currentTime;
 				}
 

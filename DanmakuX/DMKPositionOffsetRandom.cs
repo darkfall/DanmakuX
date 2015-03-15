@@ -14,7 +14,7 @@ namespace danmakux {
 			return new Vector2(UnityEngine.Random.Range(offsetStart.x, offsetEnd.x),
 			                   UnityEngine.Random.Range(offsetStart.y, offsetEnd.y));
 		}
-		#if UNITY_EDITOR
+#if UNITY_EDITOR
 		public override void OnEditorGUI(bool help) {
 			offsetStart = EditorGUILayout.Vector2Field("", offsetStart);
 			offsetEnd = EditorGUILayout.Vector2Field("", offsetEnd);

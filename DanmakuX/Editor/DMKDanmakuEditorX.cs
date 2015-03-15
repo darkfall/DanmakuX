@@ -719,7 +719,7 @@ namespace danmakux {
 			foreach(System.Reflection.Assembly asm in AppDomain.CurrentDomain.GetAssemblies()) {
 				foreach(Type type in asm.GetTypes()) {
 					if(type.BaseType == typeof(DMKBulletShooter)) {
-						menu.AddItem(new GUIContent(type.ToString()), false, OnAddShooterClicked, type.ToString());
+						menu.AddItem(new GUIContent(DMKUtil.GetTypeClassName(type)), false, OnAddShooterClicked, type);
 					}
 				}
 			}
@@ -744,7 +744,7 @@ namespace danmakux {
 			foreach(System.Reflection.Assembly asm in AppDomain.CurrentDomain.GetAssemblies()) {
 				foreach(Type type in asm.GetTypes()) {
 					if(type.BaseType == typeof(DMKShooterModifier)) {
-						menu.AddItem(new GUIContent(type.ToString()), false, OnAddModifierClicked, type.ToString());
+						menu.AddItem(new GUIContent(DMKUtil.GetTypeClassName(type)), false, OnAddModifierClicked, type);
 					}
 				}
 			}
@@ -842,7 +842,7 @@ namespace danmakux {
 				foreach(System.Reflection.Assembly asm in AppDomain.CurrentDomain.GetAssemblies()) {
 					foreach(Type type in asm.GetTypes()) {
 						if(type.BaseType == typeof(DMKBulletShooter)) {
-							menu.AddItem(new GUIContent("New Sub-Shooter/" + type.ToString()), false, OnShooterMenuAddSubShooterClicked, type);
+							menu.AddItem(new GUIContent("New Sub-Shooter/" + DMKUtil.GetTypeClassName(type)), false, OnShooterMenuAddSubShooterClicked, type);
 						}
 					}
 				}
@@ -853,7 +853,7 @@ namespace danmakux {
 				foreach(System.Reflection.Assembly asm in AppDomain.CurrentDomain.GetAssemblies()) {
 					foreach(Type type in asm.GetTypes()) {
 						if(type.BaseType == typeof(DMKTrigger)) {
-							menu.AddItem(new GUIContent("New Trigger/" + type.ToString()), false, OnAddTriggerClicked, type);
+							menu.AddItem(new GUIContent("New Trigger/" + DMKUtil.GetTypeClassName(type)), false, OnAddTriggerClicked, type);
 						}
 					}
 				}
@@ -978,7 +978,7 @@ namespace danmakux {
 			foreach(System.Reflection.Assembly asm in AppDomain.CurrentDomain.GetAssemblies()) {
 				foreach(Type type in asm.GetTypes()) {
 					if(type.BaseType == typeof(DMKBulletShooter)) {
-						menu.AddItem(new GUIContent("New Shooter/" + type.ToString()), false, OnAddShooterClicked, type);
+						menu.AddItem(new GUIContent("New Shooter/" + DMKUtil.GetTypeClassName(type)), false, OnAddShooterClicked, type);
 					}
 				}
 			}
@@ -986,7 +986,7 @@ namespace danmakux {
 			foreach(System.Reflection.Assembly asm in AppDomain.CurrentDomain.GetAssemblies()) {
 				foreach(Type type in asm.GetTypes()) {
 					if(type.BaseType == typeof(DMKShooterModifier)) {
-						menu.AddItem(new GUIContent("New Modifier/" + type.ToString()), false, OnAddModifierClicked, type);
+						menu.AddItem(new GUIContent("New Modifier/" + DMKUtil.GetTypeClassName(type)), false, OnAddModifierClicked, type);
 					}
 				}
 			}

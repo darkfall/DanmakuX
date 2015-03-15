@@ -7,7 +7,7 @@ namespace danmakux {
 
 	[Serializable]
 	class DMKPositionOffsetAbsolute: DMKPositionOffsetInterface {
-		public Vector2 offset;
+		public Vector2 offset = Vector2.zero;
 		
 		public override Vector2 Evaluate(float t) {
 			return offset;
